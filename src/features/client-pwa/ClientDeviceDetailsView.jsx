@@ -114,7 +114,7 @@ const ClientDeviceDetailsView = () => {
 
     const result = plan.paymentHistory.filter((payment) => payment.state == 'Approved');
 
-    
+
     const total = result.reduce((sum, payment) => {
       return sum + parseFloat(payment.value);
     }, 0);
@@ -166,7 +166,7 @@ const ClientDeviceDetailsView = () => {
   // console.log('Device details:', device);
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-10 py-14 space-y-20 min-h-[calc(100vh-160px)]">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-10 py-14 space-y-5 min-h-[calc(100vh-160px)]">
       {/* ENCABEZADO */}
       <div className="flex flex-col lg:flex-row justify-between items-center gap-6 border-b border-gray-200 pb-6">
         <Link
@@ -209,7 +209,7 @@ const ClientDeviceDetailsView = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm sm:text-base text-gray-700">
+          <div className="grid grid-cols-2 gap-6 text-sm sm:text-base text-gray-700">
             <div>
               <p className="text-gray-500 font-medium">Serial</p>
               <p className="font-semibold">{plan.device.serial_number}</p>
@@ -304,15 +304,15 @@ const ClientDeviceDetailsView = () => {
           )}
 
           {/* {plan.device.amountDue > 0 && ( */}
-            <div className="mt-10 text-center">
-              <Link
+          <div className="mt-10 text-center">
+            <Link
               to={`/client/make-payment/${plan.plan_id}?amount=${plan.value}`}
-                className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-br from-indigo-600 to-indigo-700 text-white text-base font-medium rounded-xl shadow-lg hover:brightness-110 transition"
-              >
-                <CreditCardIcon className="h-5 w-5 mr-2" />
-                Realizar Pago Ahora
-              </Link>
-            </div>
+              className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-br from-indigo-600 to-indigo-700 text-white text-base font-medium rounded-xl shadow-lg hover:brightness-110 transition"
+            >
+              <CreditCardIcon className="h-5 w-5 mr-2" />
+              Realizar Pago Ahora
+            </Link>
+          </div>
           {/* )} */}
         </div>
       </div>
