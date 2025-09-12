@@ -186,17 +186,21 @@ const ReportsPage = () => {
 
     return (
         <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-            <div className="flex justify-between items-center mb-6 border-b pb-4">
-                <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-                    <ChartBarIcon className="h-8 w-8 mr-2 text-indigo-600" />
-                    Dashboard Smartpay
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-4">
+                {/* Título y Ícono */}
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 flex items-center mb-4 sm:mb-0">
+                    <ChartBarIcon className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 mr-2 text-indigo-600" />
+                    <span className="truncate">Dashboard Smartpay</span>
                 </h1>
+
+                {/* Botón de Descarga */}
                 <button
                     onClick={exportToExcel}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                    className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
                 >
-                    <ArrowDownTrayIcon className="-ml-0.5 mr-2 h-5 w-5" />
-                    Descargar Reporte Excel
+                    <ArrowDownTrayIcon className="-ml-0.5 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                    <span className="ml-2 hidden sm:inline">Descargar Reporte Excel</span>
+                    <span className="ml-2 inline sm:hidden">Descargar</span>
                 </button>
             </div>
 

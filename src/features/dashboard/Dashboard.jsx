@@ -1,28 +1,42 @@
-import { use, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Cards from '../../common/components/ui/Cards';
 import { PieChart, BarChart } from '../../common/components/ui/Charts';
 import { useAuth } from '../../common/context/AuthProvider';
 import { showNewUserAlert } from '../../common/utils/auth';
 import { useNavigate } from 'react-router-dom';
 import ReportsPage from '../reports/ReportsPage.jsx';
-import { getCurrentStore } from '../../common/utils/helpers.js';
-import { set } from 'lodash';
+import { getStoreById } from '../../api/stores';
+import { getCurrentUser } from '../../common/utils/helpers.js';
+import { InformationCircleIcon, RocketLaunchIcon } from '@heroicons/react/24/outline';
 
 const Dashboard = () => {
     const { user, logout } = useAuth();
-    const [isNew, setIsNew] = useState(false);
     const navigate = useNavigate();
-    const [nameStore, setNameStore] = useState(null);
-
-    const fetchUserData = async () => {
-        await showNewUserAlert(user, setIsNew, logout, navigate);
-    }
+    const [storeName, setStoreName] = useState('');
+    const [tokensAvailable, setTokensAvailable] = useState(0);
+    const [loadingStore, setLoadingStore] = useState(true);
 
     useEffect(() => {
-        const data = getCurrentStore()
-        setNameStore(data?.nombre)
-        fetchUserData();
-    }, [])
+        const fetchStoreData = async () => {
+            const currentUser = getCurrentUser();
+            const store = currentUser?.store;
+
+            if (store && store.id) {
+                try {
+                    const fetchedStore = await getStoreById(store.id);
+                    setStoreName(fetchedStore.nombre);
+                    setTokensAvailable(fetchedStore.tokens_disponibles);
+                } catch (error) {
+                    console.error("Error fetching store data:", error);
+                }
+            }
+            setLoadingStore(false);
+            showNewUserAlert(user, navigate);
+        };
+
+        fetchStoreData();
+    }, [user, navigate]);
+
 
     const stats = useMemo(() => ({
         activeDevices: 1245,
@@ -70,71 +84,41 @@ const Dashboard = () => {
     };
 
     return (
-        // Contenedor principal con fondo gris claro y padding
-        <div className="min-h-screen bg-gray-100 ">
-            {/* Contenedor blanco para todo el contenido del dashboard */}
-            <main className="bg-white rounded-lg shadow-md p-4 sm:p-6 lg:p-8">
-                {/* Card tipo Hero para el mensaje de bienvenida */}
-                <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-6 sm:p-8 rounded-lg shadow-lg mb-6 sm:mb-8 text-center">
-                    <h2 className="text-3xl sm:text-4xl font-bold mb-2">
-                        ¡Bienvenido {nameStore ? `a ${nameStore}` : 'de nuevo'}!
-                    </h2>
-                    <p className="text-lg sm:text-xl opacity-90">Gestión eficiente de tus dispositivos con SmartPay.</p>
+        <div className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8">
+                {/* Contenedor principal del encabezado con proporciones responsivas */}
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-8">
+                    {/* Tarjeta de bienvenida */}
+                    {/* Ocupa todo el ancho en móviles (col-span-1), 2/3 en tablet (md:col-span-2) y 80% en escritorio (lg:col-span-4) */}
+                    <div className="md:col-span-2 lg:col-span-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-6 sm:p-8 rounded-lg shadow-xl flex flex-col sm:flex-row items-center justify-between text-center sm:text-left">
+                        <div className="flex-1">
+                            <h2 className="text-2xl sm:text-4xl font-bold mb-1">
+                                ¡Bienvenido, {loadingStore ? '...' : (storeName || 'de nuevo')}!
+                            </h2>
+                            <p className="text-base sm:text-lg opacity-90">Gestión eficiente de tus dispositivos con SmartPay.</p>
+                        </div>
+                        {/* Ícono solo visible en pantallas grandes */}
+                        <RocketLaunchIcon className="h-16 w-16 sm:h-20 sm:w-20 opacity-30 mt-4 sm:mt-0 hidden md:block" />
+                    </div>
+
+                    {/* Tarjeta de licencias */}
+                    {/* Ocupa todo el ancho en móviles (col-span-1), 1/3 en tablet (md:col-span-1) y 20% en escritorio (lg:col-span-1) */}
+                    <div className="md:col-span-1 lg:col-span-1 bg-white p-6 rounded-xl shadow-lg border border-gray-200 relative w-full">
+                        <div className="absolute top-4 right-4 group cursor-pointer">
+                            <InformationCircleIcon className="h-6 w-6 text-gray-400 transition-colors duration-200 hover:text-gray-600" />
+                            <div className="absolute top-8 right-0 md:right-auto md:left-1/2 md:-translate-x-1/2 w-64 p-3 bg-gray-800 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                                Para acceder a más licencias, comunícate con SmartPay.
+                            </div>
+                        </div>
+                        <div className="flex flex-col items-center justify-center">
+                            <span className="text-6xl sm:text-7xl font-bold text-green-500">{loadingStore ? '...' : tokensAvailable.toLocaleString()}</span>
+                            <span className="text-base sm:text-lg font-semibold text-green-500 mt-2 text-center">Licencias Disponibles</span>
+                        </div>
+                    </div>
                 </div>
+            <main className="bg-white rounded-lg shadow-md p-4 sm:p-6 lg:p-8">
 
+                {/* Sección de reportes */}
                 <ReportsPage />
-
-                {/* <header className="mb-6">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Dashboard SmartPay</h1>
-                </header>
-
-                <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-                    <Cards
-                        title="Dispositivos activos"
-                        value={stats.activeDevices.toLocaleString()}
-                        icon="device"
-                        color="green"
-                        change="+12% este mes"
-                    />
-                    <Cards
-                        title="Dispositivos bloqueados"
-                        value={stats.blockedDevices.toLocaleString()}
-                        icon="block"
-                        color="red"
-                        change="+5% este mes"
-                    />
-                    <Cards
-                        title="Dispositivos vendidos (total)"
-                        value={stats.soldDevices.toLocaleString()}
-                        icon="sold"
-                        color="blue"
-                        change="+23% este mes"
-                    />
-                    <Cards
-                        title="Pagos pendientes"
-                        value={stats.pendingPayments.toLocaleString()}
-                        icon="payment"
-                        color="yellow"
-                        change="-3% este mes"
-                    />
-                </section>
-
-                <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                    <PieChart
-                        data={nivoPieData}
-                        title="Distribución de Dispositivos"
-                        subTitle="Estado general del inventario"
-                    />
-                    <BarChart
-                        data={nivoBarData}
-                        keys={nivoBarKeys}
-                        indexBy="month"
-                        title="Actividad Mensual de Dispositivos"
-                        subTitle="Comparativa mensual"
-                        barColorsMap={barColors}
-                        groupMode="grouped"
-                    />
-                </section> */}
             </main>
         </div>
     );

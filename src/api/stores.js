@@ -33,6 +33,16 @@ export const getStores = async (params = {}) => {
     }
 };
 
+export const getStoreById = async (id) => {
+    try {
+        const response = await axiosInstance.get(`/stores/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error(`Error fetching store with id ${id}:`, error);
+        throw error;
+    }
+};
+
 export const createStore = async (data) => {
     try {
         const response = await axiosInstance.post('/stores/', data);
