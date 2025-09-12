@@ -8,7 +8,7 @@ import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { requestPasswordReset } from '../../api/auth';
 import { handlePasswordReset, showNewUserAlert } from '../../common/utils/auth';
-import { getPayments} from '../../api/payments';
+import { getPayments } from '../../api/payments';
 
 const MySwal = withReactContent(Swal);
 
@@ -104,12 +104,12 @@ const ClientDashboardPage = () => {
         const resultados = [];
 
         if (Array.isArray(data) && data.length > 0) {
-             for (const plan of data) {
+            for (const plan of data) {
                 const params = { device_id: plan.device_id, state: 'Approved' };
-                const paymentsResponse = await getPayments(params);        
+                const paymentsResponse = await getPayments(params);
                 resultados.push(paymentsResponse);
-             };
-             
+            };
+
         }
 
         console.log("data", resultados);
@@ -133,7 +133,7 @@ const ClientDashboardPage = () => {
             return null;
         }
 
-         if (!Array.isArray(paymentsDevices) || paymentsDevices.length == 0) {
+        if (!Array.isArray(paymentsDevices) || paymentsDevices.length == 0) {
             return 0;
         }
 
@@ -164,7 +164,7 @@ const ClientDashboardPage = () => {
     }
 
     const getPendingValue = (deviceId, value) => {
-         if (!Array.isArray(paymentsDevices) || paymentsDevices.length == 0) {
+        if (!Array.isArray(paymentsDevices) || paymentsDevices.length == 0) {
             return 0;
         }
 
@@ -248,7 +248,7 @@ const ClientDashboardPage = () => {
             <div className="flex justify-between items-center p-4 sm:p-6 lg:px-8 border-b border-gray-300 bg-white shadow-sm sticky top-0 z-10">
                 <div className="flex gap-3 items-center">
                     <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-800">
-                        <span className="text-indigo-600">SmartPay</span> &nbsp;| Mis Dispositivos
+                        <span className="text-indigo-600">{user?.store?.nombre || 'SmartPay'}</span> &nbsp;| Mis Dispositivos
                     </h1>
                 </div>
 
@@ -276,6 +276,9 @@ const ClientDashboardPage = () => {
 
             {/* Dispositivos */}
             <div className="container mx-auto p-4 sm:p-6 lg:p-8">
+                <div>
+                    Bienvenido {user?.name}
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {customerDevices.map((device) => (
                         <div

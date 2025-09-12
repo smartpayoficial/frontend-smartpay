@@ -39,7 +39,9 @@ const ClientMakePaymentPage = () => {
             setPlan(location.state.plan);
         } else {
             getPlanDetails(planId);
+
         }
+
 
     }, [planId]);
 
