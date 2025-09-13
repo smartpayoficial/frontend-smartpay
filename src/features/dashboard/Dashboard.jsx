@@ -1,23 +1,23 @@
 import { useEffect, useMemo, useState } from 'react';
-import Cards from '../../common/components/ui/Cards';
-import { PieChart, BarChart } from '../../common/components/ui/Charts';
 import { useAuth } from '../../common/context/AuthProvider';
 import { showNewUserAlert } from '../../common/utils/auth';
 import { useNavigate } from 'react-router-dom';
 import ReportsPage from '../reports/ReportsPage.jsx';
 import { getStoreById } from '../../api/stores';
 import { getCurrentUser } from '../../common/utils/helpers.js';
-import { InformationCircleIcon, RocketLaunchIcon } from '@heroicons/react/24/outline';
+import { getPlans } from '../../api/plans';
+import { InformationCircleIcon, RocketLaunchIcon, LifebuoyIcon } from '@heroicons/react/24/outline';
 
 const Dashboard = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const [storeName, setStoreName] = useState('');
     const [tokensAvailable, setTokensAvailable] = useState(0);
+    const [devicesUsed, setDevicesUsed] = useState(0);
     const [loadingStore, setLoadingStore] = useState(true);
 
     useEffect(() => {
-        const fetchStoreData = async () => {
+        const fetchData = async () => {
             const currentUser = getCurrentUser();
             const store = currentUser?.store;
 
@@ -26,17 +26,22 @@ const Dashboard = () => {
                     const fetchedStore = await getStoreById(store.id);
                     setStoreName(fetchedStore.nombre);
                     setTokensAvailable(fetchedStore.tokens_disponibles);
+
+                    const allPlans = await getPlans();
+                    setDevicesUsed(allPlans.length);
+
                 } catch (error) {
-                    console.error("Error fetching store data:", error);
+                    console.error("Error fetching data:", error);
                 }
             }
             setLoadingStore(false);
             showNewUserAlert(user, navigate);
         };
 
-        fetchStoreData();
+        fetchData();
     }, [user, navigate]);
 
+    const realTokensAvailable = tokensAvailable - devicesUsed;
 
     const stats = useMemo(() => ({
         activeDevices: 1245,
@@ -84,34 +89,41 @@ const Dashboard = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8">
+        <div className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8 relative">
                 {/* Contenedor principal del encabezado con proporciones responsivas */}
                 <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-8">
                     {/* Tarjeta de bienvenida */}
-                    {/* Ocupa todo el ancho en móviles (col-span-1), 2/3 en tablet (md:col-span-2) y 80% en escritorio (lg:col-span-4) */}
-                    <div className="md:col-span-2 lg:col-span-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-6 sm:p-8 rounded-lg shadow-xl flex flex-col sm:flex-row items-center justify-between text-center sm:text-left">
+                    <div className="md:col-span-2 lg:col-span-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-6 sm:p-8 rounded-lg shadow-xl flex flex-col sm:flex-row items-center justify-between text-center sm:text-left">
                         <div className="flex-1">
                             <h2 className="text-2xl sm:text-4xl font-bold mb-1">
                                 ¡Bienvenido, {loadingStore ? '...' : (storeName || 'de nuevo')}!
                             </h2>
                             <p className="text-base sm:text-lg opacity-90">Gestión eficiente de tus dispositivos con SmartPay.</p>
                         </div>
-                        {/* Ícono solo visible en pantallas grandes */}
                         <RocketLaunchIcon className="h-16 w-16 sm:h-20 sm:w-20 opacity-30 mt-4 sm:mt-0 hidden md:block" />
                     </div>
 
-                    {/* Tarjeta de licencias */}
-                    {/* Ocupa todo el ancho en móviles (col-span-1), 1/3 en tablet (md:col-span-1) y 20% en escritorio (lg:col-span-1) */}
-                    <div className="md:col-span-1 lg:col-span-1 bg-white p-6 rounded-xl shadow-lg border border-gray-200 relative w-full">
-                        <div className="absolute top-4 right-4 group cursor-pointer">
-                            <InformationCircleIcon className="h-6 w-6 text-gray-400 transition-colors duration-200 hover:text-gray-600" />
-                            <div className="absolute top-8 right-0 md:right-auto md:left-1/2 md:-translate-x-1/2 w-64 p-3 bg-gray-800 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-                                Para acceder a más licencias, comunícate con SmartPay.
+                    {/* Contenedor de las métricas de licencias */}
+                    <div className="md:col-span-1 lg:col-span-2">
+                        <h3 className="text-2xl font-bold text-gray-800 mb-4 text-center md:text-left">Licencias</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            {/* Tarjeta de Licencias Aprobadas */}
+                            <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-200 relative text-center">
+                                <span className="text-4xl sm:text-5xl font-bold text-blue-600">{loadingStore ? '...' : tokensAvailable.toLocaleString()}</span>
+                                <span className="block text-sm sm:text-base font-semibold text-blue-600 mt-2">Aprobadas</span>
                             </div>
-                        </div>
-                        <div className="flex flex-col items-center justify-center">
-                            <span className="text-6xl sm:text-7xl font-bold text-green-500">{loadingStore ? '...' : tokensAvailable.toLocaleString()}</span>
-                            <span className="text-base sm:text-lg font-semibold text-green-500 mt-2 text-center">Licencias Disponibles</span>
+
+                            {/* Tarjeta de Licencias Usadas */}
+                            <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-200 relative text-center">
+                                <span className="text-4xl sm:text-5xl font-bold text-gray-700">{loadingStore ? '...' : devicesUsed.toLocaleString()}</span>
+                                <span className="block text-sm sm:text-base font-semibold text-gray-700 mt-2">Usadas</span>
+                            </div>
+
+                            {/* Tarjeta de Licencias Disponibles */}
+                            <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-200 relative text-center">
+                                <span className="text-4xl sm:text-5xl font-bold text-green-500">{loadingStore ? '...' : realTokensAvailable.toLocaleString()}</span>
+                                <span className="block text-sm sm:text-base font-semibold text-green-500 mt-2">Disponibles</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -120,6 +132,18 @@ const Dashboard = () => {
                 {/* Sección de reportes */}
                 <ReportsPage />
             </main>
+
+            {/* Botón flotante de Soporte SmartPay */}
+            <a
+                href="https://wa.me/51933392072"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="fixed bottom-6 right-6 flex items-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 z-50"
+            >
+                <img src='/assets/logo.png' className="w-6 h-6 mr-2 bg-white rounded-full p-1" alt="SmartPay Logo" />
+                <span className="hidden md:inline">Soporte SmartPay</span>
+                <span className="inline md:hidden">Soporte</span>
+            </a>
         </div>
     );
 };
