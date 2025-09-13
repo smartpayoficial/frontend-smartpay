@@ -105,7 +105,7 @@ const Dashboard = () => {
 
                     {/* Contenedor de las métricas de licencias */}
                     <div className="md:col-span-1 lg:col-span-2">
-                        <h3 className="text-2xl font-bold text-gray-800 mb-4 text-center md:text-left">Licencias</h3>
+                        <h3 className="bg-gradient-to-r to-blue-500 from-indigo-600 p-2 rounded-lg text-2xl font-bold text-white shadow-lg mb-4 text-center md:text-center">Licencias</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             {/* Tarjeta de Licencias Aprobadas */}
                             <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-200 relative text-center">
