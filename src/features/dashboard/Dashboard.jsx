@@ -90,43 +90,49 @@ const Dashboard = () => {
 
     return (
         <div className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8 relative">
-                {/* Contenedor principal del encabezado con proporciones responsivas */}
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-8">
-                    {/* Tarjeta de bienvenida */}
-                    <div className="md:col-span-2 lg:col-span-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-6 sm:p-8 rounded-lg shadow-xl flex flex-col sm:flex-row items-center justify-between text-center sm:text-left">
-                        <div className="flex-1">
-                            <h2 className="text-2xl sm:text-4xl font-bold mb-1">
-                                ¡Bienvenido, {loadingStore ? '...' : (storeName || 'de nuevo')}!
-                            </h2>
-                            <p className="text-base sm:text-lg opacity-90">Gestión eficiente de tus dispositivos con SmartPay.</p>
-                        </div>
-                        <RocketLaunchIcon className="h-16 w-16 sm:h-20 sm:w-20 opacity-30 mt-4 sm:mt-0 hidden md:block" />
+            {/* Contenedor principal del encabezado con proporciones responsivas */}
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-8">
+                {/* Tarjeta de bienvenida */}
+                <div className="md:col-span-2 lg:col-span-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-6 sm:p-8 rounded-lg shadow-xl flex flex-col sm:flex-row items-center justify-between text-center sm:text-left">
+                    <div className="flex-1">
+                        <h2 className="text-2xl sm:text-4xl font-bold mb-1">
+                            ¡Bienvenido, {loadingStore ? '...' : (storeName || 'de nuevo')}!
+                        </h2>
+                        <p className="text-base sm:text-lg opacity-90">Gestión eficiente de tus dispositivos con SmartPay.</p>
                     </div>
+                    <RocketLaunchIcon className="h-16 w-16 sm:h-20 sm:w-20 opacity-30 mt-4 sm:mt-0 hidden md:block" />
+                </div>
 
-                    {/* Contenedor de las métricas de licencias */}
-                    <div className="md:col-span-1 lg:col-span-2">
-                        <h3 className="bg-gradient-to-r to-blue-500 from-indigo-600 p-2 rounded-lg text-2xl font-bold text-white shadow-lg mb-4 text-center md:text-center">Licencias</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            {/* Tarjeta de Licencias Aprobadas */}
-                            <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-200 relative text-center">
-                                <span className="text-4xl sm:text-5xl font-bold text-blue-600">{loadingStore ? '...' : tokensAvailable.toLocaleString()}</span>
-                                <span className="block text-sm sm:text-base font-semibold text-blue-600 mt-2">Aprobadas</span>
-                            </div>
+                {/* Contenedor de las métricas de licencias */}
+                <div className="md:col-span-1 lg:col-span-2">
+                    <h3 className="bg-gradient-to-r to-blue-500 from-indigo-600 p-2 rounded-lg text-2xl font-bold text-white shadow-lg mb-4 text-center md:text-center">Licencias</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        {/* Tarjeta de Licencias Aprobadas */}
+                        <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-200 relative text-center">
+                            <span className="text-4xl sm:text-5xl font-bold text-blue-600">{loadingStore ? '...' : tokensAvailable.toLocaleString()}</span>
+                            <span className="block text-sm sm:text-base font-semibold text-blue-600 mt-2">Aprobadas</span>
+                        </div>
 
-                            {/* Tarjeta de Licencias Usadas */}
-                            <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-200 relative text-center">
-                                <span className="text-4xl sm:text-5xl font-bold text-gray-700">{loadingStore ? '...' : devicesUsed.toLocaleString()}</span>
-                                <span className="block text-sm sm:text-base font-semibold text-gray-700 mt-2">Usadas</span>
-                            </div>
+                        {/* Tarjeta de Licencias Usadas */}
+                        <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-200 relative text-center">
+                            <span className="text-4xl sm:text-5xl font-bold text-gray-700">{loadingStore ? '...' : devicesUsed.toLocaleString()}</span>
+                            <span className="block text-sm sm:text-base font-semibold text-gray-700 mt-2">Usadas</span>
+                        </div>
 
-                            {/* Tarjeta de Licencias Disponibles */}
-                            <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-200 relative text-center">
-                                <span className="text-4xl sm:text-5xl font-bold text-green-500">{loadingStore ? '...' : realTokensAvailable.toLocaleString()}</span>
-                                <span className="block text-sm sm:text-base font-semibold text-green-500 mt-2">Disponibles</span>
-                            </div>
+                        {/* Tarjeta de Licencias Disponibles */}
+                        <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-200 relative text-center">
+                            {/* Lógica para cambiar el color del número */}
+                            <span className={`text-4xl sm:text-5xl font-bold ${realTokensAvailable === 0 ? 'text-red-500' : 'text-green-500'}`}>
+                                {loadingStore ? '...' : realTokensAvailable.toLocaleString()}
+                            </span>
+                            {/* Lógica para cambiar el color del texto */}
+                            <span className={`block text-sm sm:text-base font-semibold mt-2 ${realTokensAvailable === 0 ? 'text-red-500' : 'text-green-500'}`}>
+                                Disponibles
+                            </span>
                         </div>
                     </div>
                 </div>
+            </div>
             <main className="bg-white rounded-lg shadow-md p-4 sm:p-6 lg:p-8">
 
                 {/* Sección de reportes */}
