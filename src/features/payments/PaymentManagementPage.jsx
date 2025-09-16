@@ -256,7 +256,9 @@ const PaymentManagementPage = () => {
                                 <h3 className="text-xl font-bold mb-2">¡Atención: Licencias Agotadas! ⚠️</h3>
                                 <p className="text-lg">
                                     Para registrar más ventas, por favor contacta a soporte de SmartPay.
-                                    Si tus licencias están en negativo, te pedimos ponerte al día con tus pagos.
+                                    {realTokensAvailable < 0 && (
+                                        <> Si tienes licencias en negativo, por favor ponte al día con tus pagos.</>
+                                    )}
                                 </p>
                             </div>
                         )}
