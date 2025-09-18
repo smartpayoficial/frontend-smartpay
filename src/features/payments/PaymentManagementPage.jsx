@@ -19,6 +19,7 @@ const PaymentManagementPage = () => {
     const [currentStep, setCurrentStep] = useState(0);
     const [newInvoiceData, setNewInvoiceData] = useState({});
     const [customers, setCustomers] = useState([]);
+    const [plans, setPlans] = useState([]);
 
     // Nuevos estados para la gestión de licencias
     const [tokensAvailable, setTokensAvailable] = useState(0);
@@ -59,6 +60,7 @@ const PaymentManagementPage = () => {
             if (storeId) {
                 const store = await getStoreById(storeId);
                 const plans = await getPlans();
+                setPlans(plans);
                 setTokensAvailable(store.tokens_disponibles);
                 setDevicesUsed(plans.length);
             }
@@ -188,7 +190,7 @@ const PaymentManagementPage = () => {
         return (
             <div className="flex justify-between items-center mb-6 border-b pb-4">
                 <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-                    <span className="mr-2">💰</span> Gestión de Pagos
+                    <span className="mr-2">💰</span> Ventas Realizadas
                 </h1>
                 {loadingLicenses ? (
                     <p className="text-gray-500">Cargando licencias...</p>
@@ -249,7 +251,7 @@ const PaymentManagementPage = () => {
                 return (
                     <>
                         {renderHeader()}
-                        <PaymentTable payments={payments} />
+                        <PaymentTable payments={plans} />
                         {/* Mensaje condicional de licencias */}
                         {realTokensAvailable <= 0 && (
                             <div className="mt-8 p-6 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg shadow-md">

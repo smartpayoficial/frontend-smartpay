@@ -1,8 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { PAGE_SIZE } from '../../../common/utils/const';
+import { useNavigate } from 'react-router-dom';
 
 const PaymentTable = ({ payments = [] }) => {
     const [currentPage, setCurrentPage] = useState(1);
+    const navigate = useNavigate();
 
     const paginatedPayments = useMemo(() => {
         const start = (currentPage - 1) * PAGE_SIZE;
@@ -11,25 +13,31 @@ const PaymentTable = ({ payments = [] }) => {
 
     const totalPages = Math.ceil(payments.length / PAGE_SIZE);
 
+    const onViewDetails = (paymentId) => {
+        navigate(`/devices-management?deviceId=${paymentId}`);
+    }
+
     return (
         <div className="overflow-x-auto shadow-lg sm:rounded-lg">
             <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                     <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha Registro</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dispositivo</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Método</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vendido Por</th>
+                        {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th> */}
+                        {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Método</th> */}
+                        {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th> */}
                     </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                     {paginatedPayments.length > 0 ? (
                         paginatedPayments.map((payment) => (
-                            <tr key={payment.payment_id}>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{`${payment.plan.user.first_name} ${payment.plan.user.middle_name} ${payment.plan.user.last_name} ${payment.plan.user.second_last_name}` || ''}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{new Date(payment.date).toLocaleDateString()}</td>
+                            <tr key={payment.plan_id}>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{`${payment.user.first_name} ${payment.user.middle_name} ${payment.user.last_name} ${payment.user.second_last_name}` || ''}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{new Date(payment.initial_date).toLocaleDateString()}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     {(() => {
                                         const rawValue = payment.value !== undefined && payment.value !== null ? payment.value : payment.amount;
@@ -49,7 +57,16 @@ const PaymentTable = ({ payments = [] }) => {
                                         ? `${payment.device.model || ''} (${payment.device.serial_number || ''})`.trim()
                                         : 'N/A'}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{payment.method || 'N/A'}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{`${payment.vendor.first_name} ${payment.vendor.middle_name} ${payment.vendor.last_name} ${payment.vendor.second_last_name}` || ''}</td>
+                                {/* <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <button
+                                        onClick={() => onViewDetails(payment.device.device_id)}
+                                        className="text-blue-600 hover:text-blue-900 ml-4"
+                                    >
+                                        Ver Detalles
+                                    </button>
+                                </td> */}
+                                {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{payment.method || 'N/A'}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                                         ['approved', 'active', 'completado'].includes(payment.state?.toLowerCase())
@@ -69,7 +86,7 @@ const PaymentTable = ({ payments = [] }) => {
                                             }
                                         })()}
                                     </span>
-                                </td>
+                                </td> */}
                             </tr>
                         ))
                     ) : (
@@ -83,7 +100,7 @@ const PaymentTable = ({ payments = [] }) => {
             </table>
 
             {totalPages > 1 && (
-                   <div className="flex justify-end items-center mt-4 space-x-4 m-2">
+                <div className="flex justify-end items-center mt-4 space-x-4 m-2">
                     <button
                         onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                         disabled={currentPage === 1}
