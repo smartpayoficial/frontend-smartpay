@@ -267,7 +267,7 @@ const ReportsPage = () => {
                 </div>
             </div>
 
-            <div className="bg-white shadow sm:rounded-lg p-6">
+            {/* <div className="bg-white shadow sm:rounded-lg p-6">
                 <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
                     <CalendarDaysIcon className="h-6 w-6 mr-2 text-indigo-600" />
                     Detalle de Datos ({reportType})
@@ -300,7 +300,7 @@ const ReportsPage = () => {
                 ) : (
                     <p className="text-gray-500 text-center py-4">No hay datos disponibles para el filtro seleccionado.</p>
                 )}
-            </div>
+            </div> */}
 
         </div>
     );
