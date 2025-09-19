@@ -245,24 +245,7 @@ const LoginPage = () => {
                             </div>
                         </div>
 
-                        {/* <div className="flex items-center justify-between text-sm">
-                            <div className="flex items-center">
-                                <input
-                                    id="remember-me"
-                                    name="remember-me"
-                                    type="checkbox"
-                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                    checked={rememberMe}
-                                    onChange={(e) => setRememberMe(e.target.checked)}
-                                />
-                                <label htmlFor="remember-me" className="ml-2 block text-gray-900">
-                                    Recuerdame
-                                </label>
-                            </div>
-                            <Link to="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
-                                ¿Olvidaste la contraseña?
-                            </Link>
-                        </div> */}
+                        
 
                         <button
                             type="submit"
@@ -271,6 +254,15 @@ const LoginPage = () => {
                         >
                             {loading ? 'Iniciando Sesión...' : 'Iniciar Sesión'}
                         </button>
+
+                        <div className="flex items-center justify-center text-sm">
+                            <div className="flex items-center">
+                                <Link to="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
+                                    ¿Olvidaste la contraseña?
+                                </Link>
+                            </div>
+                        </div>
+
                         {/* <button
                             type="button"
                             onClick={testFetchUsers}
@@ -279,7 +271,7 @@ const LoginPage = () => {
                             Probar Obtener Usuarios (Debug)
                         </button> */}
                     </form>
-{/* 
+                    {/* 
                     <p className="text-center text-sm text-gray-600 mt-6">
                         ¿Todavía no tienes una cuenta? {' '}
                         <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500">

@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { jwtDecode } from 'jwt-decode'; // Asegúrate de haber instalado 'jwt-decode': npm install jwt-decode
+import { jwtDecode } from 'jwt-decode';
 
 const AuthContext = createContext(null);
 
