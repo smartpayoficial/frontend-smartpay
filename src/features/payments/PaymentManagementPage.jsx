@@ -41,6 +41,24 @@ const PaymentManagementPage = () => {
         }
     }, []);
 
+    /**
+     * Método para cargar planes 
+     */
+    const fetchPlans = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+              const plans = await getPlans();
+            setPlans(plans);
+        } catch (err) {
+            console.error('Error al cargar pagos:', err);
+            setError('No se pudieron cargar los pagos. Inténtalo de nuevo más tarde.');
+            toast.error('Error al cargar pagos.');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
     const fetchCustomers = useCallback(async () => {
         try {
             const data = await getUsers({ role_name: 'Cliente' });
@@ -59,8 +77,7 @@ const PaymentManagementPage = () => {
 
             if (storeId) {
                 const store = await getStoreById(storeId);
-                const plans = await getPlans();
-                setPlans(plans);
+              
                 setTokensAvailable(store.tokens_disponibles);
                 setDevicesUsed(plans.length);
             }
@@ -72,10 +89,10 @@ const PaymentManagementPage = () => {
     }, []);
 
     useEffect(() => {
-        fetchPayments();
+        fetchPlans();
         fetchCustomers();
         fetchLicenses();
-    }, [fetchPayments, fetchCustomers, fetchLicenses]);
+    }, [fetchPlans, fetchCustomers, fetchLicenses]);
 
     const handleStartNewInvoice = () => {
         setNewInvoiceData({});
@@ -164,7 +181,7 @@ const PaymentManagementPage = () => {
                 showConfirmButton: false
             });
 
-            fetchPayments();
+            fetchPlans();
             setCurrentStep(0);
             setNewInvoiceData({});
 
@@ -240,7 +257,7 @@ const PaymentManagementPage = () => {
                             <h3 className="text-xl font-semibold mb-2">Error al cargar datos</h3>
                             <p className="text-base">{error}</p>
                             <button
-                                onClick={fetchPayments}
+                                onClick={fetchPlans}
                                 className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                             >
                                 Reintentar
