@@ -8,82 +8,83 @@ import { getConfigurations, updateConfiguration } from '../../api/configuration'
 import AccountTable from './components/AccountTable';
 import ConfigurationTable from './components/ConfigurationTable';
 import ConfigurationModal from './components/ConfigurationModal';
+import BankContacts from './components/BankContacts';
 import { SettingsIcon } from 'lucide-react';
 import Swal from 'sweetalert2';
 
 function ConfigurationPage() {
-  const CLIENT_ID = "631597337466-dt7qitq7tg2022rhje5ib5sk0eua6t79.apps.googleusercontent.com";
-  const REDIRECT_URI = "https://smartpay-oficial.com:9443/api/v1/google/auth/callback";
-  const SCOPE = "profile email https://www.googleapis.com/auth/userinfo.profile";
+    const CLIENT_ID = "631597337466-dt7qitq7tg2022rhje5ib5sk0eua6t79.apps.googleusercontent.com";
+    const REDIRECT_URI = "https://smartpay-oficial.com:9443/api/v1/google/auth/callback";
+    const SCOPE = "profile email https://www.googleapis.com/auth/userinfo.profile";
 
-  const [accounts, setAccounts] = useState([]);
-  const [configurations, setConfigurations] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [editingConfiguration, setEditingConfiguration] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+    const [accounts, setAccounts] = useState([]);
+    const [configurations, setConfigurations] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [editingConfiguration, setEditingConfiguration] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const [searchAccounts, setSearchAccounts] = useState(''); 
-  const [searchConfig, setSearchConfig] = useState(''); 
+    const [searchAccounts, setSearchAccounts] = useState('');
+    const [searchConfig, setSearchConfig] = useState('');
 
-  const fetchAccounts = useCallback(async () => {
-          setLoading(true);
-          setError(null);
-          try {
-              const data = await getFactoryReset();
-              setAccounts(data);
-          } catch (err) {
-              console.error('Error al cargar cuentas:', err);
-              setError('No se pudieron cargar las cuentas para Factory Reset. Inténtalo de nuevo más tarde.');
-              toast.error('Error al cargar cuentas.');
-          } finally {
-              setLoading(false);
-          }
-      }, []); 
-    
-  const fetchConfigurations = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-        const data = await getConfigurations();
-        setConfigurations(data);
-    } catch (err) {
-        console.error('Error al cargar configuraciones:', err);
-        setError('No se pudieron cargar las configuraciones. Inténtalo de nuevo más tarde.');
-        toast.error('Error al cargar configuraciones.');
-    } finally {
-        setLoading(false);
-    }
-  }, []); 
+    const fetchAccounts = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await getFactoryReset();
+            setAccounts(data);
+        } catch (err) {
+            console.error('Error al cargar cuentas:', err);
+            setError('No se pudieron cargar las cuentas para Factory Reset. Inténtalo de nuevo más tarde.');
+            toast.error('Error al cargar cuentas.');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
-  // Este useEffect se encargará de cargar los clientes y roles solo una vez al montar el componente.
-  useEffect(() => {
-    fetchAccounts();
-    fetchConfigurations();
-  }, [fetchAccounts, fetchConfigurations]);
+    const fetchConfigurations = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await getConfigurations();
+            setConfigurations(data);
+        } catch (err) {
+            console.error('Error al cargar configuraciones:', err);
+            setError('No se pudieron cargar las configuraciones. Inténtalo de nuevo más tarde.');
+            toast.error('Error al cargar configuraciones.');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
-  const handleOpenModal = (configuration = null) => {
-    console.error("Data", configuration);
-    setEditingConfiguration(configuration);
-    setIsModalOpen(true);
-  };
+    // Este useEffect se encargará de cargar los clientes y roles solo una vez al montar el componente.
+    useEffect(() => {
+        fetchAccounts();
+        fetchConfigurations();
+    }, [fetchAccounts, fetchConfigurations]);
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setEditingConfiguration(null);
-  };
+    const handleOpenModal = (configuration = null) => {
+        console.error("Data", configuration);
+        setEditingConfiguration(configuration);
+        setIsModalOpen(true);
+    };
 
-  const handleSubmitConfiguration = async (configuration) => {
-          Swal.fire({
-              title: 'Actualizando configuracion...',
-              text: 'Por favor espera',
-              allowOutsideClick: false,
-              didOpen: () => {
-                  Swal.showLoading();
-              }
-          });
-  
-          try {
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setEditingConfiguration(null);
+    };
+
+    const handleSubmitConfiguration = async (configuration) => {
+        Swal.fire({
+            title: 'Actualizando configuracion...',
+            text: 'Por favor espera',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        try {
             const dataToUpdate = { ...configuration };
             await updateConfiguration(editingConfiguration.configuration_id, dataToUpdate);
             Swal.close();
@@ -96,45 +97,45 @@ function ConfigurationPage() {
                 showConfirmButton: false
             });
             fetchConfigurations(); // Vuelve a cargar los clientes después de una operación CRUD
-          } catch (err) {
-              Swal.close();
-              console.error("Error saving configuration:", err);
-              const errorMessage = err.response?.data?.detail || err.message || "Hubo un error al actualizar la configuración.";
-              Swal.fire({
-                  icon: 'error',
-                  title: 'Error al actualizar',
-                  text: errorMessage,
-                  confirmButtonText: 'Ok'
-              });
-              toast.error(`Error al actualizar la configuración: ${errorMessage}`);
-          } finally {
-              handleCloseModal();
-          }
-  };
+        } catch (err) {
+            Swal.close();
+            console.error("Error saving configuration:", err);
+            const errorMessage = err.response?.data?.detail || err.message || "Hubo un error al actualizar la configuración.";
+            Swal.fire({
+                icon: 'error',
+                title: 'Error al actualizar',
+                text: errorMessage,
+                confirmButtonText: 'Ok'
+            });
+            toast.error(`Error al actualizar la configuración: ${errorMessage}`);
+        } finally {
+            handleCloseModal();
+        }
+    };
 
-  const login = () => {
-    const storedUser = localStorage.getItem("user"); // Usa la clave con la que guardaste el objeto
-    if (!storedUser) {
-        console.log("No se encontró el datos del usuario en el localStorage");
-        return;  
-    }
+    const login = () => {
+        const storedUser = localStorage.getItem("user"); // Usa la clave con la que guardaste el objeto
+        if (!storedUser) {
+            console.log("No se encontró el datos del usuario en el localStorage");
+            return;
+        }
 
-    var storeId = null;
-    try {
-        const user = JSON.parse(storedUser); // Convertir de JSON a objeto
-        storeId = user.store?.id; // Acceder al ID del store (usa optional chaining por seguridad)
-        console.log("Store ID:", storeId);
-    } catch (error) {
-        console.error("Error al parsear el objeto del localStorage", error);
-    }
+        var storeId = null;
+        try {
+            const user = JSON.parse(storedUser); // Convertir de JSON a objeto
+            storeId = user.store?.id; // Acceder al ID del store (usa optional chaining por seguridad)
+            console.log("Store ID:", storeId);
+        } catch (error) {
+            console.error("Error al parsear el objeto del localStorage", error);
+        }
 
-    const state = encodeURIComponent(JSON.stringify({ storeId }));
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${encodeURIComponent(SCOPE)}&access_type=offline&prompt=consent&state=${state}`;
-    window.location.href = authUrl;
-  };
+        const state = encodeURIComponent(JSON.stringify({ storeId }));
+        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${encodeURIComponent(SCOPE)}&access_type=offline&prompt=consent&state=${state}`;
+        window.location.href = authUrl;
+    };
 
-  const onDeleteAccount = async (factory_reset_protection_id) => {
-    console.log("Llegue aqui");
+    const onDeleteAccount = async (factory_reset_protection_id) => {
+        console.log("Llegue aqui");
         const confirmUnblock = window.confirm('¿Estás seguro de que quieres eliminar esta cuenta para el factory reset?');
         if (!confirmUnblock) return;
         try {
@@ -150,7 +151,7 @@ function ConfigurationPage() {
         }
     };
 
-  if (loading) {
+    if (loading) {
         return (
             <div className="container mx-auto p-4 sm:p-6 lg:p-8 flex justify-center items-center h-screen">
                 <svg className="animate-spin -ml-1 mr-3 h-10 w-10 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -193,7 +194,7 @@ function ConfigurationPage() {
 
     return (
         <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-           <div className="flex justify-between items-center mb-6 border-b pb-4">
+            <div className="flex justify-between items-center mb-6 border-b pb-4">
                 <h1 className="text-3xl font-bold text-gray-900 flex items-center">
                     <LockClosedIcon className="h-8 w-8 mr-2 text-blue-600" />
                     Cuentas Factory Reset Protection
@@ -303,9 +304,13 @@ function ConfigurationPage() {
                     onSubmit={handleSubmitConfiguration}
                 />
             </div>
+
+            <div className="pt-16">
+                <BankContacts />
+            </div>
         </div>
+
     );
 }
 
 export default ConfigurationPage;
- 

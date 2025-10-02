@@ -5,6 +5,7 @@ import { getPlanById } from '../../api/plans';
 import { getPayments } from '../../api/payments';
 import { CurrencyDollarIcon, ChartPieIcon } from '@heroicons/react/24/outline';
 import { InformationCircleIcon } from '@heroicons/react/24/outline';
+import { getContacts } from '../../api/stores';
 
 const ClientMakePaymentPage = () => {
     const location = useLocation();
@@ -14,6 +15,7 @@ const ClientMakePaymentPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isCopied, setIsCopied] = useState(false);
+    const [contactData, setContactData] = useState({});
 
     const accountNumber = '0000 0000 0000 0000';
 
@@ -55,7 +57,50 @@ const ClientMakePaymentPage = () => {
                 if (!planData) {
                     planData = await getPlanById(planId);
                 }
+
                 const history = await getPayments({ device_id: planData.device_id });
+
+                // obtener contactos
+                const contacts = await getContacts();
+
+                // Inicializamos contactData limpio
+                const newContactData = {
+                    account: null, // para cuentas bancarias, gateways, etc.
+                    phone: null    // para contacto telefónico
+                };
+
+                contacts.forEach(item => {
+                    const category = item.account_type?.category;
+                    const details = item.contact_details || {};
+
+                    // Si es cuenta bancaria o método de pago
+                    if (['BANK_ACCOUNT', 'MOBILE_PAYMENT', 'PAYMENT_GATEWAY'].includes(category)) {
+                        
+                        if (!newContactData.account) {
+                            newContactData.account = {
+                                value: details.account_number || details.phone_number || '',
+                                type: item.account_type
+                            };
+                            console.log('BACKKJ: ',newContactData)
+                        }
+                    }
+
+                    // Si es contacto telefónico
+                    if (category === 'CONTACT') {
+                        console.log('newww: ', details)
+                        if (!newContactData.phone) {
+                            newContactData.phone = {
+                                value: details.phone_code + details.phone_number || '',
+                                type: item.account_type
+                            };
+                        }
+                    }
+                });
+
+                // Guardamos la info de contacto en el estado
+                setContactData(newContactData);
+
+                // Guardamos el plan con el historial de pagos
                 setPlan({ ...planData, paymentHistory: history });
             } catch (err) {
                 console.error('Error fetching plan or history:', err);
@@ -68,7 +113,7 @@ const ClientMakePaymentPage = () => {
     }, [planId, location.state?.plan]);
 
     const handleCopyClick = () => {
-        navigator.clipboard.writeText(accountNumber);
+        navigator.clipboard.writeText(contactData?.account?.value);
         setIsCopied(true);
         setTimeout(() => {
             setIsCopied(false);
@@ -76,7 +121,7 @@ const ClientMakePaymentPage = () => {
     };
 
     const generateWhatsappLink = () => {
-        const phoneNumber = '573012345678'; // Reemplaza con el número de teléfono real
+        const phoneNumber = contactData?.phone?.value; // Reemplaza con el número de teléfono real
         const message = `Hola, he realizado un pago para el plan del dispositivo ${plan?.device?.model} (Serial: ${plan?.device?.serial_number}). Adjunto la captura del pago. El monto del pago es de $${Number(valueToPay).toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
         const encodedMessage = encodeURIComponent(message);
         return `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
@@ -180,12 +225,14 @@ const ClientMakePaymentPage = () => {
                             Datos para la transferencia
                         </h2>
                         <div className="flex flex-col items-center text-center p-4 bg-gray-50 rounded-xl border border-gray-200">
-                            <span className="text-sm font-semibold text-gray-600">Bancolombia</span>
-                            <div className="flex items-center justify-between w-full mt-2">
-                                <span className="text-xl font-bold font-mono text-gray-900">{accountNumber}</span>
+                            <span className="text-sm font-semibold text-gray-600">{contactData?.account?.type?.name}</span>
+                            <div className="relative flex items-center w-full mt-2">
+                                <span className="absolute left-1/2 transform -translate-x-1/2 text-xl font-bold font-mono text-gray-900">
+                                    {contactData?.account?.value}
+                                </span>
                                 <button
                                     onClick={handleCopyClick}
-                                    className="inline-flex items-center p-3 rounded-full text-gray-500 bg-white hover:bg-gray-100 border border-gray-300 transition active:scale-95"
+                                    className="ml-auto inline-flex items-center p-3 rounded-full text-gray-500 bg-white hover:bg-gray-100 border border-gray-300 transition active:scale-95"
                                 >
                                     <DocumentDuplicateIcon className="h-5 w-5" />
                                 </button>
