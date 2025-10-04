@@ -78,16 +78,14 @@ const ClientMakePaymentPage = () => {
                         
                         if (!newContactData.account) {
                             newContactData.account = {
-                                value: details.account_number || details.phone_number || '',
+                                value: details.account_number || details.phone_number || details.email || '',
                                 type: item.account_type
                             };
-                            console.log('BACKKJ: ',newContactData)
                         }
                     }
 
                     // Si es contacto telefónico
                     if (category === 'CONTACT') {
-                        console.log('newww: ', details)
                         if (!newContactData.phone) {
                             newContactData.phone = {
                                 value: details.phone_code + details.phone_number || '',

@@ -42,7 +42,7 @@ const Step2DeviceProvisioning = ({ onNext, onBack, initialData = {} }) => {
     if (simulateDummyDevice) {
       toast.info('Simulando aprovisionamiento de dispositivo dummy...');
       const timer = setTimeout(() => {
-        const dummyDeviceId = 'abd442c4-84c4-4e7f-bc33-2f988ccbb64d';
+        const dummyDeviceId = '40b42af7-10e5-4773-98e6-f8ef60342494';
         const dummyEnrolmentId = initialData.customer?.user_id ? `ENR-${initialData.customer.user_id.substring(0, 8)}-${Date.now()}` : `ENR-${uuidv4().substring(0, 8)}-${Date.now()}`;
 
         const dummyDevice = {
@@ -87,7 +87,7 @@ const Step2DeviceProvisioning = ({ onNext, onBack, initialData = {} }) => {
       const storedUser = localStorage.getItem("user"); // Usa la clave con la que guardaste el objeto
       if (!storedUser) {
         console.log("No se encontró el datos del usuario en el localStorage");
-        return;  
+        return;
       }
 
       var storeId = null;
@@ -99,7 +99,7 @@ const Step2DeviceProvisioning = ({ onNext, onBack, initialData = {} }) => {
         console.error("Error al parsear el objeto del localStorage", error);
       }
 
-      const provisioningJson =  await getProvisioningJson(enrollmentId, storeId, false);
+      const provisioningJson = await getProvisioningJson(enrollmentId, storeId, false);
       console.log("Store ID:", provisioningJson);
       setQrProvisioningData(provisioningJson);
 
@@ -193,22 +193,29 @@ const Step2DeviceProvisioning = ({ onNext, onBack, initialData = {} }) => {
       <h2 className="text-2xl font-semibold text-gray-900 mb-6">Paso 2: Aprovisionamiento de Dispositivo</h2>
 
       {/* DEBUG DUMMY SIMULATOR */}
-      {/* <div className="flex items-center justify-end mb-4">
-        <span className="mr-3 text-sm font-medium text-gray-900">Modo de Simulación Dummy</span>
-        <label htmlFor="toggle-dummy" className="relative inline-flex items-center cursor-pointer">
-          <input
-            type="checkbox"
-            id="toggle-dummy"
-            className="sr-only peer"
-            checked={simulateDummyDevice}
-            onChange={(e) => {
-              setSimulateDummyDevice(e.target.checked);
-              handleRetryProvisioning();
-            }}
-          />
-          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-        </label>
-      </div> */}
+      {import.meta.env.VITE_DEVELOPMENT_MODE === 'true' && (
+        <div className="flex items-center justify-end mb-4">
+          <span className="mr-3 text-sm font-medium text-gray-900">
+            Modo de Simulación Dummy
+          </span>
+          <label
+            htmlFor="toggle-dummy"
+            className="relative inline-flex items-center cursor-pointer"
+          >
+            <input
+              type="checkbox"
+              id="toggle-dummy"
+              className="sr-only peer"
+              checked={simulateDummyDevice}
+              onChange={(e) => {
+                setSimulateDummyDevice(e.target.checked);
+                handleRetryProvisioning();
+              }}
+            />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+          </label>
+        </div>
+      )}
 
       <div className="bg-gray-50 p-6 rounded-lg shadow-inner text-center">
         {loading && (
