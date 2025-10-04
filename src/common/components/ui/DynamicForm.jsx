@@ -58,7 +58,7 @@ const DynamicForm = ({ fields, formData, handleInputChange }) => {
               <input
                 type="tel"
                 inputMode="numeric"
-                pattern="[0-9]{10}"
+                pattern="[0-9]{7,15}"
                 id={inputId}
                 value={value}
                 onChange={(e) => handlePhoneNumberChange(e, name)}
