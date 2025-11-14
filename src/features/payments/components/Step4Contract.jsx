@@ -99,14 +99,22 @@ const Step4Contract = ({ onNext, onBack, initialData }) => {
                     representativeDNI={authenticatedUser.dni || 'N/A'} // Asumiendo que el usuario autenticado tiene DNI
                     representativePhone={authenticatedUser.phone || 'N/A'} // Asumiendo que tiene teléfono
                     representativeEmail={authenticatedUser.email}
-                    representativeAccountBack={authenticatedUser.store.contacts
-                        .filter(contact => contact.account_type?.category === 'BANK_ACCOUNT')
-                        .map(contact => ({
-                            name: contact.account_type?.name,
-                            value: contact.contact_details?.phone_number ||
-                                contact.contact_details?.account_number ||
-                                contact.contact_details?.email
-                        }))
+                    representativeAccountBack={
+                        Array.isArray(authenticatedUser?.store?.contacts)
+                            ? authenticatedUser.store.contacts
+                                .filter(
+                                    contact =>
+                                        contact?.account_type?.category === 'BANK_ACCOUNT'
+                                )
+                                .map(contact => ({
+                                    name: contact?.account_type?.name || '--',
+                                    value:
+                                        contact?.contact_details?.phone_number ||
+                                        contact?.contact_details?.account_number ||
+                                        contact?.contact_details?.email ||
+                                        '--'
+                                }))
+                            : []
                     }
 
                 // contractDate ya se usa en ContractPDFGenerator como new Date() por defecto

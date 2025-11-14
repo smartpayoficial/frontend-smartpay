@@ -453,14 +453,21 @@ const ContractPDFGenerator = ({
 
         {/* Payment Methods */}
         <div className="mb-8 section-to-print">
-          {/* <h3 className="font-bold mb-4">MÉTODOS DE PAGO</h3> */}
+          <h3 className="font-bold mb-4">MÉTODOS DE PAGO</h3>
           <div className="space-y-2">
-            {/* <br /> */}
-            {/* <br /> */}
-            {/* <br /> */}
-            <p><strong>ENTIDAD BANCARIA:</strong> {representativeAccountBack[0].name}</p>
+            <p>
+              <strong>ENTIDAD BANCARIA:</strong>{' '}
+              {representativeAccountBack.length > 0
+                ? representativeAccountBack[0].name
+                : '--'}
+            </p>
             {/* <p><strong>CAJA PIURA:</strong> 210-01-2683375</p> */}
-            <p><strong>NUMERO DE CUENTA:</strong> {representativeAccountBack[0].value}</p>
+            <p>
+              <strong>NÚMERO DE CUENTA:</strong>{' '}
+              {representativeAccountBack.length > 0
+                ? representativeAccountBack[0].value
+                : '--'}
+            </p>
             <p><strong>PAGO EN EFECTIVO A TIENDA COBRADOR</strong></p>
           </div>
         </div>
