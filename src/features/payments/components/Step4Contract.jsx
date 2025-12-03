@@ -96,7 +96,7 @@ const equipment = buildEquipment(device);
                 <ContractPDFGenerator
                     // Datos de la compañía (pueden ser props o importar de una constante global si son fijos)
                     // ruc={companyInfo.ruc} // Si los tienes en initialData.company, úsalos
-                    companyName={authenticatedUser?.store?.nombre.toUpperCase() || '' }
+                    companyName={authenticatedUser?.store?.nombre.toUpperCase() || ''}
                     // ...etc.
 
                     // Datos del cliente (borrower)
@@ -120,6 +120,24 @@ const equipment = buildEquipment(device);
                     representativeDNI={authenticatedUser.dni || 'N/A'} // Asumiendo que el usuario autenticado tiene DNI
                     representativePhone={authenticatedUser.phone || 'N/A'} // Asumiendo que tiene teléfono
                     representativeEmail={authenticatedUser.email}
+                    representativeAccountBack={
+                        Array.isArray(authenticatedUser?.store?.contacts)
+                            ? authenticatedUser.store.contacts
+                                .filter(
+                                    contact =>
+                                        contact?.account_type?.category === 'BANK_ACCOUNT'
+                                )
+                                .map(contact => ({
+                                    name: contact?.account_type?.name || '--',
+                                    value:
+                                        contact?.contact_details?.phone_number ||
+                                        contact?.contact_details?.account_number ||
+                                        contact?.contact_details?.email ||
+                                        '--'
+                                }))
+                            : []
+                    }
+
                 // contractDate ya se usa en ContractPDFGenerator como new Date() por defecto
                 />
             </div>

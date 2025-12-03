@@ -25,6 +25,7 @@ const PaymentManagementPage = () => {
     const [tokensAvailable, setTokensAvailable] = useState(0);
     const [devicesUsed, setDevicesUsed] = useState(0);
     const [loadingLicenses, setLoadingLicenses] = useState(true);
+    const [isSaleInProgress, setIsSaleInProgress] = useState(false);
 
     const fetchPayments = useCallback(async () => {
         setLoading(true);
@@ -66,7 +67,7 @@ const PaymentManagementPage = () => {
         } catch (err) {
             console.error('Error al cargar clientes para facturación:', err);
             toast.error('Error al cargar la lista de clientes.');
-        }
+        } 
     }, []);
 
     const fetchLicenses = useCallback(async () => {
@@ -89,9 +90,28 @@ const PaymentManagementPage = () => {
     }, []);
 
     useEffect(() => {
+        const checkSaleStatus = () => {
+            const savedState = localStorage.getItem('paymentFlowState');
+            setIsSaleInProgress(!!savedState);
+        };
+
+        checkSaleStatus();
+
+        const handleStorageChange = (e) => {
+            if (e.key === 'paymentFlowState') {
+                checkSaleStatus();
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+
         fetchPlans();
         fetchCustomers();
         fetchLicenses();
+
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+        };
     }, [fetchPlans, fetchCustomers, fetchLicenses]);
 
     const handleStartNewInvoice = () => {
@@ -102,7 +122,14 @@ const PaymentManagementPage = () => {
     const handleBackToTable = () => {
         setCurrentStep(0);
         setNewInvoiceData({});
+        localStorage.removeItem('paymentFlowState');
+        setIsSaleInProgress(false);
     };
+
+    const handleFlowReset = () => {
+        localStorage.removeItem('paymentFlowState');
+        setIsSaleInProgress(false);
+    }
 
     const handleContactSupport = () => {
         window.open('https://wa.me/51933392072', '_blank', 'noopener,noreferrer');
@@ -189,6 +216,8 @@ const PaymentManagementPage = () => {
             fetchPlans();
             setCurrentStep(0);
             setNewInvoiceData({});
+            localStorage.removeItem('paymentFlowState');
+            setIsSaleInProgress(false);
 
         } catch (err) {
             Swal.close();
@@ -219,13 +248,23 @@ const PaymentManagementPage = () => {
                 ) : (
                     <>
                         {canRegister ? (
-                            <button
-                                onClick={handleStartNewInvoice}
-                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                            >
-                                <PlusIcon className="-ml-0.5 mr-2 h-5 w-5" />
-                                Registrar Nueva Factura de Venta
-                            </button>
+                            isSaleInProgress ? (
+                                <button
+                                    onClick={handleStartNewInvoice}
+                                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                                >
+                                    <PlusIcon className="-ml-0.5 mr-2 h-5 w-5" />
+                                    Venta en Proceso... (Continuar)
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={handleStartNewInvoice}
+                                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                >
+                                    <PlusIcon className="-ml-0.5 mr-2 h-5 w-5" />
+                                    Registrar Nueva Factura de Venta
+                                </button>
+                            )
                         ) : (
                             <button
                                 onClick={handleContactSupport}
@@ -294,6 +333,7 @@ const PaymentManagementPage = () => {
                         initialData={newInvoiceData}
                         onFinalize={handlePaymentsFlowFinalize}
                         onBackToParent={handleBackToTable}
+                        onReset={handleFlowReset}
                         customers={customers}
                     />
                 );

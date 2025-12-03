@@ -4,6 +4,7 @@ import { QrCodeIcon, WifiIcon, CheckCircleIcon, ArrowPathIcon } from '@heroicons
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
 import { toast } from 'react-toastify';
 import QRCode from 'react-qr-code';
+import Swal from 'sweetalert2';
 
 import {
   createEnrolment,
@@ -12,7 +13,7 @@ import {
   getProvisioningJson,
 } from '../../../api/enrolments';
 
-const Step2DeviceProvisioning = ({ onNext, onBack, initialData = {} }) => {
+const Step2DeviceProvisioning = ({ onNext, onBack, initialData = {}, onDataChange }) => {
   const [qrGenerated, setQrGenerated] = useState(false);
   const [deviceConnected, setDeviceConnected] = useState(false);
   const [deviceDetails, setDeviceDetails] = useState(initialData.device || null);
@@ -25,14 +26,44 @@ const Step2DeviceProvisioning = ({ onNext, onBack, initialData = {} }) => {
 
   const [simulateDummyDevice, setSimulateDummyDevice] = useState(false);
 
-  // 🔑 Ref para leer el tipo actual en el polling
-  const deviceTypeRef = useRef(deviceType);
-  useEffect(() => {
-    deviceTypeRef.current = deviceType;
-  }, [deviceType]);
+  const checkDeviceConnection = useCallback(async (enrollmentId) => {
+    let connected = false;
+    let attempts = 0;
+    const maxAttempts = 300;
+    const delay = 3000;
 
-  const startProvisioningProcess = useCallback(async () => {
-    if (initialData.device) {
+    while (!connected && attempts < maxAttempts) {
+      attempts++;
+      try {
+        console.log('x2 EnrollmentId:', enrollmentId);
+        const response = await getDeviceByEnrolmentId(enrollmentId);
+        console.log("Response step2", response);
+        if (response) {
+          setDeviceDetails(response);
+          setDeviceConnected(true);
+          toast.success('Dispositivo conectado y datos obtenidos.');
+          connected = true;
+          break;
+        }
+      } catch (error) {
+        if (error.response?.status !== 404) {
+          console.error(`Error en polling:`, error);
+          toast.warn(`Error del servidor (código ${error.response?.status}). Intento ${attempts}.`);
+        }
+      }
+      if (!connected) {
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+
+    if (!connected) {
+      toast.error('Tiempo de espera agotado. El dispositivo no se conectó.');
+    }
+    setIsPolling(false);
+  }, []);
+
+  const startProvisioningProcess = useCallback(async (forceNew = false) => {
+    if (initialData.device && !forceNew) {
       setDeviceDetails(initialData.device);
       setDeviceConnected(true);
       setQrGenerated(true);
@@ -42,6 +73,18 @@ const Step2DeviceProvisioning = ({ onNext, onBack, initialData = {} }) => {
       return;
     }
 
+    if (initialData.enrolment_id && initialData.qrProvisioningData && !forceNew) {
+        setQrProvisioningData(initialData.qrProvisioningData);
+        setCurrentEnrolmentId(initialData.enrolment_id);
+        setQrGenerated(true);
+        setLoading(false);
+        setIsPolling(true);
+        toast.success('QR recuperado. Escanea el código con el dispositivo.');
+        toast.info('Esperando que el dispositivo establezca conexión...');
+        setTimeout(() => checkDeviceConnection(initialData.enrolment_id), 1000);
+        return;
+    }
+
     setLoading(true);
     setQrGenerated(false);
     setDeviceConnected(false);
@@ -49,6 +92,34 @@ const Step2DeviceProvisioning = ({ onNext, onBack, initialData = {} }) => {
     setQrProvisioningData(null);
     setCurrentEnrolmentId(null);
     setIsPolling(false);
+
+    if (simulateDummyDevice) {
+      toast.info('Simulando aprovisionamiento de dispositivo dummy...');
+      const timer = setTimeout(() => {
+        const dummyDeviceId = '40b42af7-10e5-4773-98e6-f8ef60342494';
+        const dummyEnrolmentId = initialData.customer?.user_id ? `ENR-${initialData.customer.user_id.substring(0, 8)}-${Date.now()}` : `ENR-${uuidv4().substring(0, 8)}-${Date.now()}`;
+
+        const dummyDevice = {
+          device_id: dummyDeviceId,
+          enrolment_id: dummyEnrolmentId,
+          product_name: "SmartPOS T-800 Simulada",
+          brand: "OlimpoTech Sim.",
+          model: "T800-SP-PRO-Sim",
+          serial_number: `SN-${Date.now().toString().slice(-8)}`,
+          imei: `IMEI-${Math.floor(Math.random() * 1000000000000000)}`,
+          imei_two: `IMEI2-${Math.floor(Math.random() * 1000000000000000)}`,
+          state: "Activo",
+        };
+
+        setDeviceDetails(dummyDevice);
+        setDeviceConnected(true);
+        setLoading(false);
+        setIsPolling(false);
+        toast.success('Dispositivo dummy aprovisionado y listo para continuar.');
+      }, 1500);
+
+      return () => clearTimeout(timer);
+    }
 
     try {
       toast.info('Generando QR y preparando enrolamiento...');
@@ -62,76 +133,30 @@ const Step2DeviceProvisioning = ({ onNext, onBack, initialData = {} }) => {
       const enrollmentId = enrolmentCreationResponse?.enrolment_id;
       setCurrentEnrolmentId(enrollmentId);
 
-      const storedUser = localStorage.getItem('user');
-      let storeId = null;
-      if (storedUser) {
-        try {
-          const user = JSON.parse(storedUser);
-          storeId = user.store?.id;
-        } catch (err) {
-          console.error('Error al parsear usuario del localStorage', err);
-        }
+      const storedUser = localStorage.getItem("user");
+      if (!storedUser) {
+        console.log("No se encontró el datos del usuario en el localStorage");
+        return;
+      }
+
+      var storeId = null;
+      try {
+        const user = JSON.parse(storedUser);
+        storeId = user.store?.id;
+      } catch (error) {
+        console.error("Error al parsear el objeto del localStorage", error);
       }
 
       const provisioningJson = await getProvisioningJson(enrollmentId, storeId, false);
       setQrProvisioningData(provisioningJson);
+
+      onDataChange({ enrolment_id: enrollmentId, qrProvisioningData: provisioningJson });
 
       setQrGenerated(true);
       setLoading(false);
       setIsPolling(true);
       toast.success('QR generado. Escanea el código con el dispositivo.');
       toast.info('Esperando que el dispositivo establezca conexión...');
-
-      const checkDeviceConnection = async (enrollmentId) => {
-        let connected = false;
-        let attempts = 0;
-        const maxAttempts = 300 ;
-        const delay = 3000;
-
-        while (!connected && attempts < maxAttempts) {
-          attempts++;
-          try {
-            // 👇 leer siempre el valor más reciente
-            const currentDeviceType = deviceTypeRef.current;
-            console.log('DeviceType actual:', currentDeviceType);
-
-            if (currentDeviceType) {
-              // Caso dispositivo móvil
-              const response = await getDeviceByEnrolmentId(enrollmentId);
-              if (response) {
-                setDeviceDetails(response);
-                setDeviceConnected(true);
-                toast.success('Dispositivo conectado.');
-                connected = true;
-                break;
-              }
-            } else {
-              // Caso televisor
-              const response = await getTelevisorByEnrolmentId(enrollmentId);
-              if (response) {
-                setDeviceDetails(response);
-                setDeviceConnected(true);
-                toast.success('Televisor conectado.');
-                connected = true;
-                break;
-              }
-            }
-          } catch (error) {
-            if (error.response?.status !== 404) {
-              console.error('Error en polling:', error);
-              toast.warn(`Error servidor: ${error.response?.status}`);
-            }
-          }
-          if (!connected) {
-            await new Promise((resolve) => setTimeout(resolve, delay));
-          }
-        }
-
-        if (!connected) {
-          toast.error('Tiempo de espera agotado. No se conectó ningún dispositivo.');
-        }
-        setIsPolling(false);
-      };
 
       setTimeout(() => checkDeviceConnection(enrollmentId), 1000);
     } catch (error) {
@@ -140,7 +165,7 @@ const Step2DeviceProvisioning = ({ onNext, onBack, initialData = {} }) => {
       setIsPolling(false);
       toast.error(`Error: ${error.message}`);
     }
-  }, [initialData, simulateDummyDevice]);
+  }, [initialData, simulateDummyDevice, onDataChange, checkDeviceConnection]);
 
   useEffect(() => {
     if (!initialData.device && !hasStartedProvisioning.current) {
@@ -166,16 +191,23 @@ const Step2DeviceProvisioning = ({ onNext, onBack, initialData = {} }) => {
     }
   };
 
-  const handleRetryProvisioning = () => {
-    hasStartedProvisioning.current = false;
-    setDeviceDetails(null);
-    setDeviceConnected(false);
-    setQrGenerated(false);
-    setQrProvisioningData(null);
-    setCurrentEnrolmentId(null);
-    setLoading(true);
-    setIsPolling(false);
-    startProvisioningProcess();
+  const handleForceNewEnrolment = () => {
+    Swal.fire({
+        title: '¿Generar nuevo enrolamiento?',
+        text: "Usarse si el enrolamiento anterior falló.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, generar nuevo',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            onDataChange({ enrolment_id: null, qrProvisioningData: null, device: null });
+            hasStartedProvisioning.current = false;
+            startProvisioningProcess(true);
+        }
+    });
   };
 
   console.log('Datos provis', deviceDetails);
@@ -184,19 +216,43 @@ const Step2DeviceProvisioning = ({ onNext, onBack, initialData = {} }) => {
     <div className="space-y-6">
       <h2 className="text-2xl font-semibold text-gray-900">Paso 2: Aprovisionamiento</h2>
 
-      {/* Toggle tipo de dispositivo */}
-      <div className="flex items-center gap-3">
-        <label className="flex items-center cursor-pointer">
-          <input
-            type="checkbox"
-            className="sr-only"
-            checked={!deviceType}
-            onChange={(e) => setDeviceType(!e.target.checked)}
-          />
-          <div className="w-14 h-7 bg-gray-200 rounded-full peer-checked:bg-blue-600 transition-all"></div>
-          <span className="ml-3">{deviceType ? 'Dispositivo' : 'Televisor'}</span>
-        </label>
-      </div>
+      {import.meta.env.VITE_DEVELOPMENT_MODE === 'true' && (
+        <div className="flex items-center justify-end mb-4">
+          <span className="mr-3 text-sm font-medium text-gray-900">
+            Modo de Simulación Dummy
+          </span>
+          <label
+            htmlFor="toggle-dummy"
+            className="relative inline-flex items-center cursor-pointer"
+          >
+            <input
+              type="checkbox"
+              id="toggle-dummy"
+              className="sr-only peer"
+              checked={simulateDummyDevice}
+              onChange={(e) => {
+                setSimulateDummyDevice(e.target.checked);
+                handleForceNewEnrolment();
+              }}
+            />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+          </label>
+        </div>
+      )}
+
+        {/* Toggle tipo de dispositivo */}
+        <div className="flex items-center gap-3">
+            <label className="flex items-center cursor-pointer">
+                <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={!deviceType}
+                    onChange={(e) => setDeviceType(!e.target.checked)}
+                />
+                <div className="w-14 h-7 bg-gray-200 rounded-full peer-checked:bg-blue-600 transition-all"></div>
+                <span className="ml-3">{deviceType ? 'Dispositivo' : 'Televisor'}</span>
+            </label>
+        </div>
 
       {/* QR o estados */}
       <div className="bg-gray-50 p-6 rounded-lg shadow-inner text-center">
@@ -220,6 +276,13 @@ const Step2DeviceProvisioning = ({ onNext, onBack, initialData = {} }) => {
               <WifiIcon className="inline-block h-5 w-5 mr-1 animate-pulse" />
               Esperando conexión...
             </p>
+            <button
+              onClick={handleForceNewEnrolment}
+              className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-orange-600 hover:bg-orange-700"
+            >
+              <ArrowPathIcon className="-ml-0.5 mr-2 h-5 w-5" />
+              Generar nuevo enrolamiento
+            </button>
           </div>
         )}
 
@@ -229,7 +292,7 @@ const Step2DeviceProvisioning = ({ onNext, onBack, initialData = {} }) => {
             <p className="mt-4 text-lg font-medium">Dispositivo no detectado.</p>
             <p className="text-sm">El tiempo de espera ha expirado. Intenta nuevamente.</p>
             <button
-              onClick={handleRetryProvisioning}
+              onClick={() => startProvisioningProcess(true)}
               className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
             >
               <ArrowPathIcon className="-ml-0.5 mr-2 h-5 w-5" />
