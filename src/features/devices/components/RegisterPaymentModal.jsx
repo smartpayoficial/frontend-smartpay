@@ -4,21 +4,23 @@ import Swal from 'sweetalert2';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
 
-const RegisterPaymentModal = ({ isOpen, onClose, onSubmit, plan, payments }) => {
+const RegisterPaymentModal = ({ isOpen, onClose, onSubmit, plan, payments, isTelevision }) => {
     const date = getEffectivePaymentDate(payments, plan.initial_date, plan.period);
     const quotaValue = getQuotaValue(payments, plan);
 
     console.log("Value", quotaValue);
 
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState(() => ({
         value: quotaValue,
         method: '',
         state: 'Approved',
         date: date,
         reference: `PI-${Date.now()}`,
-        device_id: plan.device_id,
+        ...(isTelevision 
+            ? { television_id: plan.television_id } 
+            : { device_id: plan.device_id }),
         plan_id: plan.plan_id
-    }, [quotaValue, plan]);
+    }));
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -43,7 +45,7 @@ const RegisterPaymentModal = ({ isOpen, onClose, onSubmit, plan, payments }) => 
             }
         }
         console.log(formData);
-        onSubmit(formData);
+        onSubmit(formData, isTelevision);
         onClose();
     };
 

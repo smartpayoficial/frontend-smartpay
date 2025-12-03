@@ -84,10 +84,12 @@ export const getPlanById = async (planId) => {
  * @param {string} deviceId - El ID del dispositivo.
  * @returns {Promise<object>} El plan de pago.
  */
-export const getPlanByDeviceId = async (deviceId) => {
+export const getPlanByDeviceId = async (isDevice, id) => {
     try {
 
-        const params = { device_id: deviceId };
+        const params = isDevice
+            ? { device_id: id }
+            : { television_id: id };
         const response = await axiosInstance.get(`/plans/`, { params });
         if (Array.isArray(response.data)) {
             return response.data[0]

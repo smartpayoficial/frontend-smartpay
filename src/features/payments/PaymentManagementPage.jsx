@@ -74,9 +74,12 @@ const PaymentManagementPage = () => {
 
         try {
             const { customer, authenticatedUser, paymentPlan, initialPayment, signedContractFile } = finalData;
+            
+            const deviceId = finalData?.device?.device_id;
+            const televisionId = finalData?.device?.television_id;
 
-            const deviceId = finalData.device.device_id;
-            console.log("DeviceId", paymentPlan);
+            console.log("TelevisionId", televisionId);
+            console.log("DeviceId", deviceId);
 
             const planPayload = {
                 initial_date: paymentPlan.initial_date,
@@ -85,6 +88,7 @@ const PaymentManagementPage = () => {
                 value: paymentPlan.value,
                 contract: "Contrato digital generado",
                 device_id: deviceId,
+                television_id: televisionId,
                 user_id: customer.user_id,
                 vendor_id: authenticatedUser.user_id
             };
@@ -115,6 +119,7 @@ const PaymentManagementPage = () => {
                     date: initialPayment.date,
                     reference: initialPayment.reference || `PI-${Date.now()}`,
                     device_id: deviceId,
+                    television_id: televisionId,
                     plan_id: planId
                 };
                 

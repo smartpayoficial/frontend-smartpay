@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 // Importa tu nuevo componente generador de PDF
 import ContractPDFGenerator from '../contract/ContractPDFGenerator'; // ¡Asegúrate de que esta ruta sea correcta!
 import { PDF_SIZE_CONTRACT } from '../../../common/utils/const';
+import { eq } from 'lodash';
 
 const Step4Contract = ({ onNext, onBack, initialData }) => {
     const [contractFile, setContractFile] = useState(initialData.signedContractFile || null);
@@ -56,6 +57,30 @@ const Step4Contract = ({ onNext, onBack, initialData }) => {
         }
     };
 
+    const buildEquipment = (d) => {
+    // Soporta variantes de nombre: deviceId / id / device_id
+    const id = d?.device_id;
+
+    if (typeof id === 'number' ? true : Boolean(id?.toString().trim())) {
+        return {
+            brand: device.product_name,
+            model: device.model,
+            imei: device.imei,
+            isDevice: true
+        };
+    }
+
+    return {
+        brand: d?.brand ?? '',
+        model: d?.model ?? '',
+        imei: d?.serial_number ?? '',
+        isDevice: false
+    };
+    };
+
+const equipment = buildEquipment(device);
+
+    console.log("Datos  e", device);
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">Paso 4: Contrato 📄</h2>
@@ -82,11 +107,7 @@ const Step4Contract = ({ onNext, onBack, initialData }) => {
                     borrowerAddress={customer.address}
 
                     // Datos del dispositivo
-                    equipment={{
-                        brand: device.product_name,
-                        model: device.model,
-                        imei: device.imei
-                    }}
+                    equipment={equipment} // Usa la función para construir el equipo
                     devicePrice={device.price_usd} // Usa el valor numérico real del dispositivo
 
                     // Datos del plan de pagos

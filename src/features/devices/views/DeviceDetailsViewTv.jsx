@@ -1,20 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import SimManagementModal from '../components/SimManagementModal';
 import ContractViewModal from '../components/ContractViewModal';
 import RegisterPaymentModal from '../components/RegisterPaymentModal';
 import DeviceMapComponent from '../components/DeviceMapComponent';
 import { toast } from 'react-toastify';
-import Swal from 'sweetalert2';
 
-import { approveDeviceSim, removeDeviceSim, getSims } from '../../../api/devices';
 import NotifyModal from '../components/NotifyModal';
 import { downloadContract } from '../../../api/plans';
 import { formatDisplayDate } from '../../../common/utils/helpers';
-import ReEnrollmentModal from '../components/ReEnrollmentModal';
 
-import { getProvisioningJson } from '../../../api/enrolments';
-
-const DeviceDetailsView = ({
+const DeviceDetailsViewTv = ({
     plan,
     location,
     payments,
@@ -31,14 +25,13 @@ const DeviceDetailsView = ({
     onDeviceUpdate,
     isPolling
 }) => {
+    if (!plan.television) {
+        return <div className="text-center py-8">Cargando detalles del dispositivo...</div>;
+    }
+
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({});
     const [isSaving, setIsSaving] = useState(false);
-    const [localSims, setLocalSims] = useState([]);
-
-    const [isSimModalOpen, setIsSimModalOpen] = useState(false);
-    const [isReEnrollmentOpen, setIsReEnrollmentOpen] = useState(false);
-    const [qrCode, setQrCode] = useState(null);
     const [isContractModalOpen, setIsContractModalOpen] = useState(false);
     const [isNotifyModalOpen, setIsNotifyModalOpen] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -48,24 +41,24 @@ const DeviceDetailsView = ({
     const dummyContractUrl = 'https://www.africau.edu/images/default/sample.pdf';
 
     useEffect(() => {
-        if (plan.device) {
+        if (plan.television) {
             const newFormData = {
-                name: plan.device.name || '',
-                description: plan.device.description || '',
-                imei: plan.value || '',
-                imei2: plan.device.imei2 || '',
-                serial_number: plan.device.serial_number || '',
-                model: plan.device.model || '',
-                brand: 'sdasdsadsdads',
+                brand: plan.television.brand || '',
+                model: plan.television.model || '',
+                android_version: plan.television.android_version || 0,
+                serial_number: plan.television.serial_number || '',
+                board: plan.television.board || '',
+                fingerprint: plan.television.fingerprint || '',
                 price: plan.value || 0,
+                quotas: plan.quotas || 0,
                 purchase_date: plan.initial_date || '',
-                state: plan.device.state || 'Active'
+                state: plan.television.state || 'Active'
             };
             setFormData(newFormData);
             // console.log('AAA')
             getLastBlockState();
         }
-    }, [plan.device]);
+    }, [plan.television]);
     
     useEffect(() => {
         const paymentsValue = payments
@@ -118,12 +111,11 @@ const DeviceDetailsView = ({
             };
 
             const dataToSend = {
-                name: data.name,
                 state: data.state,
 
             }
 
-            await onUpdateDevice(plan.device_id, dataToSend);
+            await onUpdateDevice(plan.television_id, dataToSend);
             setIsEditing(false);
             if (onDeviceUpdate) {
                 onDeviceUpdate();
@@ -132,61 +124,6 @@ const DeviceDetailsView = ({
             // console.error("Failed to save device:", error);
         } finally {
             setIsSaving(false);
-        }
-    };
-
-    const handleOpenSimModal = async () => {
-        const toasId = toast.loading(`Obteniendo sims.`);
-
-        try {
-            const simsResponse = await getSims(plan.device_id);
-            setLocalSims(simsResponse);
-            toast.dismiss(toasId);
-            setIsSimModalOpen(true);
-        } catch (err) {
-            // console.error('Error al cargar detalles de la sim:', err);
-            setError('Error al cargar los detalles de la sim.');
-        }
-    };
-
-    const handleCloseSimModal = () => {
-        setIsSimModalOpen(false);
-        if (onDeviceUpdate) {
-            onDeviceUpdate();
-        }
-    };
-
-     const handleReEnrollmentOpen = async () => {
-        toast.success('Obteniendo QR...')
-        try {
-            // Obtener el objeto del localStorage
-            const storedUser = localStorage.getItem("user"); // Usa la clave con la que guardaste el objeto
-            if (!storedUser) {
-                // console.log("No se encontró el datos del usuario en el localStorage");
-                return;  
-            }
-            
-            var storeId = null;
-            try {
-                const user = JSON.parse(storedUser); // Convertir de JSON a objeto
-                storeId = user.store?.id; // Acceder al ID del store (usa optional chaining por seguridad)
-                // console.log("Store ID:", storeId);
-            } catch (error) {
-                // console.error("Error al parsear el objeto del localStorage", error);
-            }
-
-            const qrCode = await getProvisioningJson(plan.device.enrolment_id, storeId, true);
-            setQrCode(qrCode);
-            setIsReEnrollmentOpen(true);   
-        } catch (error) {
-            toast.error('Error cargando Qr...')
-        }
-    };
-
-    const handleReEnrollmentClose = () => {
-        setIsReEnrollmentOpen(false);
-        if (onDeviceUpdate) {
-            onDeviceUpdate();
         }
     };
 
@@ -223,46 +160,6 @@ const DeviceDetailsView = ({
         setIsPaymentModalOpen(false);
     };
 
-
-    const handleApproveSim = async (simId, iccId) => {
-        try {
-            const updatedSim = await approveDeviceSim(plan.device.device_id, simId);
-
-            setLocalSims(prev =>
-                prev.map(sim => sim.icc_id === iccId ? updatedSim : sim)
-            );
-            toast.success(`SIM ${iccId} aprobada con éxito.`);
-            return true;
-        } catch (error) {
-            const errorMessage = error.response?.data?.detail || error.message || 'Error desconocido al aprobar SIM';
-            Swal.fire('Error', `Error al aprobar SIM ${iccId}: ${errorMessage}`, 'error');
-            // console.error('Error al aprobar SIM:', error);
-            return false;
-        }
-    };
-
-    const handleRemoveSim = async (simId, iccId) => {
-        try {
-            const updatedSim = await removeDeviceSim(plan.device.device_id, simId);
-            setLocalSims(prev =>
-                prev.map(sim => sim.icc_id === iccId ? updatedSim : sim)
-            );
-            toast.success(`SIM ${iccId} desvinculada con éxito.`);
-            return true;
-        } catch (error) {
-            const errorMessage = error.response?.data?.detail || error.message || 'Error desconocido al desvincular SIM';
-            Swal.fire('Error', `Error al desvincular SIM ${iccId}: ${errorMessage}`, 'error');
-            // console.error('Error al desvincular SIM:', error);
-            return false;
-        }
-    };
-
-
-
-    if (!plan.device) {
-        return <div className="text-center py-8">Cargando detalles del dispositivo...</div>;
-    }
-
     const getStatusClass = (status) => {
         if (isPaid) {
             return 'bg-green-100 text-blue-800';
@@ -295,28 +192,25 @@ const DeviceDetailsView = ({
     const isSuperAdmin = userRole === 'superadmin';
 
     const generalInfoFields = [
-        { key: 'product_name', label: 'Nombre' }, { key: 'serial_number', label: 'Serial' },
+        { key: 'serial_number', label: 'Serial' },
         { key: 'model', label: 'Modelo' }, { key: 'brand', label: 'Marca' },
-        { key: 'imei', label: 'IMEI 1' }, { key: 'imei2', label: 'IMEI 2' },
         { key: 'state', label: 'Estado' }, { key: 'price', label: 'Precio', type: 'number' },
         { key: 'purchase_date', label: 'Fecha de Compra', type: 'date' },
         { key: 'period', label: 'Periodo (días)', type: 'number' },
+        { key: 'quotas', label: 'Cuotas', type: 'number' },
         { key: 'user', label: 'Cliente' },
         { key: 'location', label: 'Ubicación' },
-        // { key: 'created_at', label: 'Creado el' }, { key: 'updated_at', label: 'Última Actualización' },
     ];
 
     const fieldsToExcludeFromDirectEdit = [
-        'device_id',
+        'television_id',
         'serial_number',
         'model',
         'brand',
-        'imei',
-        'product_name',
-        'imei_two',
         'created_at',
         'updated_at',
         'location',
+        'quotas',
         'purchase_date',
         'vendor',
         'period',
@@ -332,9 +226,7 @@ const DeviceDetailsView = ({
         unblock: "Desbloqueo",
         locate: "Ubicación",
         notify: "Notificación",
-        unenroll: "Liberado",
-        block_sim: "Bloqueo de Sim",
-        unblock_sim: "Desbloqueo de Sim"
+        unenroll: "Liberado"
     };
 
     const stateLabels = {
@@ -363,14 +255,13 @@ const DeviceDetailsView = ({
                     Volver
                 </button>
                 <h2 className="text-3xl font-extrabold text-gray-900">
-                    Detalles del Dispositivo: {plan.device.name}
+                    Detalles del Dispositivo: {plan.television.model}
                 </h2>
                 <div className="w-24"></div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 {/* Columna Izquierda: Información General */}
-                
                 <div className="bg-gray-50 p-6 rounded-lg shadow-inner">
                     <h3 className="text-2xl font-semibold text-gray-800 mb-4">Información General</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -413,8 +304,8 @@ const DeviceDetailsView = ({
                                     ) : (
                                         <p className="mt-1 text-sm text-gray-900 font-semibold">
                                             {key === 'state' ? (
-                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(plan.device.state)}`}>
-                                                    {getStateName(plan.device.state) || 'N/A'}
+                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(plan.television.state)}`}>
+                                                    {getStateName(plan.television.state) || 'N/A'}
                                                 </span>
                                             ) : (
                                                 (key === 'purchase_date') ? plan.initial_date :
@@ -431,8 +322,8 @@ const DeviceDetailsView = ({
                                                                 .join(' ') || 'N/A'
                                                             ) :
                                                                 (key === 'created_at' || key === 'updated_at')
-                                                                    ? (new Date(plan.device[key]).toLocaleString() || 'N/A')
-                                                                    : (plan.device[key] || plan[key] || 'N/A')
+                                                                    ? (new Date(plan.television[key]).toLocaleString() || 'N/A')
+                                                                    : (plan.television[key] || plan[key] || 'N/A')
                                             )}
                                         </p>
                                     )}
@@ -450,17 +341,6 @@ const DeviceDetailsView = ({
                                 </button>
                             </div>
                         )}
-                        {/* SIM button moved next to Ver Contrato */}
-                        {!isEditing && isSuperAdmin && (
-                            <div className="col-span-full sm:col-span-1 lg:col-span-1 flex justify-center items-center">
-                                <button
-                                    onClick={handleOpenSimModal}
-                                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition duration-200 ease-in-out w-full"
-                                >
-                                    Ver SIM
-                                </button>
-                            </div>
-                        )}
 
                         {/* New: Mensaje button */}
                         {!isEditing && isSuperAdmin && (
@@ -470,18 +350,6 @@ const DeviceDetailsView = ({
                                     className={`bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition duration-200 ease-in-out w-full`}
                                 >
                                     Enviar mensaje
-                                </button>
-                            </div>
-                        )}
-
-                        {/* New: Mensaje button */}
-                        {!isEditing && isSuperAdmin && (
-                            <div className="col-span-full sm:col-span-1 lg:col-span-1 flex justify-center items-center">
-                                <button
-                                    onClick={handleReEnrollmentOpen}
-                                    className={`bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition duration-200 ease-in-out w-full`}
-                                >
-                                    ReEnrolar
                                 </button>
                             </div>
                         )}
@@ -503,18 +371,16 @@ const DeviceDetailsView = ({
                                         onClick={() => {
                                             setIsEditing(false);
                                             setFormData({
-                                                name: plan.device.name || '', description: plan.device.description || '',
-                                                imei: plan.device.imei || '', imei2: plan.device.imei2 || '',
-                                                serial_number: plan.device.serial_number || '', model: plan.device.model || '',
-                                                brand: plan.device.brand || '', price: plan.device.price || 0,
-                                                purchase_date: plan.device.purchase_date ? plan.device.purchase_date.split('T')[0] : '',
-                                                warranty_end_date: plan.device.warranty_end_date ? plan.device.warranty_end_date.split('T')[0] : '',
-                                                assigned_to_user_id: plan.device.assigned_to_user_id || '',
-                                                state: plan.device.state || 'Active', location: plan.device.location || '',
-                                                notes: plan.device.notes || '', created_at: plan.device.created_at || '',
-                                                updated_at: plan.device.updated_at || '',
-                                                last_location_latitude: plan.device.last_location_latitude || '',
-                                                last_location_longitude: plan.device.last_location_longitude || '',
+                                                serial_number: plan.television.serial_number || '', model: plan.television.model || '',
+                                                brand: plan.television.brand || '', price: plan.television.price || 0,
+                                                purchase_date: plan.television.purchase_date ? plan.television.purchase_date.split('T')[0] : '',
+                                                warranty_end_date: plan.television.warranty_end_date ? plan.television.warranty_end_date.split('T')[0] : '',
+                                                assigned_to_user_id: plan.television.assigned_to_user_id || '',
+                                                state: plan.television.state || 'Active', location: plan.television.location || '',
+                                                notes: plan.television.notes || '', created_at: plan.television.created_at || '',
+                                                updated_at: plan.television.updated_at || '',
+                                                last_location_latitude: plan.television.last_location_latitude || '',
+                                                last_location_longitude: plan.television.last_location_longitude || '',
                                             });
                                         }}
                                         className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg text-sm transition duration-200 ease-in-out w-full"
@@ -536,12 +402,12 @@ const DeviceDetailsView = ({
                         <DeviceMapComponent
                             latitude={location?.latitude ?? 0}
                             longitude={location?.longitude ?? 0}
-                            deviceSerial={plan.device.serial_number || plan.device.name} // Usar serial o nombre para el popup
+                            deviceSerial={plan.television.serial_number || plan.television.model} // Usar serial o nombre para el popup
                         />
                         {/* Botón Localizar: siempre habilitado */}
                         {isSuperAdmin && (
                             <button
-                                onClick={() => onLocate(plan.device.device_id, false)}
+                                onClick={() => onLocate(plan.television.television_id, true)}
                                 className={`mt-4 bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out w-full ${isPolling ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
                                 Notificar Ubicación
@@ -555,7 +421,7 @@ const DeviceDetailsView = ({
                         <div className="mb-4">
                             {isSuperAdmin && getLastBlockState() == 'unblock' && (
                                 <button
-                                    onClick={() => onBlock(plan.device.device_id, false)}
+                                    onClick={() => onBlock(plan.television.television_id, true)}
                                     className={`bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out w-full`}
                                 >
                                     Bloquear
@@ -563,7 +429,7 @@ const DeviceDetailsView = ({
                             )}
                             {isSuperAdmin && getLastBlockState() == 'block' && (
                                 <button
-                                    onClick={() => onUnblock(plan.device.device_id, false)}
+                                    onClick={() => onUnblock(plan.television.television_id, true)}
                                     className={`bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out w-full`}
                                 >
                                     Desbloquear
@@ -583,7 +449,7 @@ const DeviceDetailsView = ({
                             )}
                             {isSuperAdmin && (
                                 <button
-                                    onClick={() => onRelease(plan.device.device_id)}
+                                    onClick={() => onRelease(plan.television.television_id, true)}
                                     disabled={!isPaid}
                                     className={`bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out w-full ${(!isPaid) ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 >
@@ -703,18 +569,6 @@ const DeviceDetailsView = ({
                 )}
             </div>
 
-            {/* Modal de Gestión de SIMs */}
-            {isSimModalOpen && (
-                <SimManagementModal
-                    sims={localSims}
-                    isOpen={isSimModalOpen}
-                    onClose={handleCloseSimModal}
-                    device={plan.device}
-                    onApproveSim={handleApproveSim}
-                    onRemoveSim={handleRemoveSim}
-                />
-            )}
-
             {/* Modal para Ver Contrato */}
             {isContractModalOpen && (
                 <ContractViewModal
@@ -730,8 +584,8 @@ const DeviceDetailsView = ({
                     isOpen={isNotifyModalOpen}
                     onClose={handleCloseNotifyModal}
                     onSubmit={onNotification}
-                    deviceId={plan.device_id}
-                    isTelevision={false}
+                    deviceId={plan.television_id}
+                    isTelevision={true}
                 />
             )}
 
@@ -743,20 +597,11 @@ const DeviceDetailsView = ({
                     onSubmit={onSubmitPayment}
                     plan={plan}
                     payments={payments}
-                />
-            )}
-
-             {/* Modal para ReEnrolar */}
-            {isReEnrollmentOpen && (
-                <ReEnrollmentModal
-                    isOpen={isReEnrollmentOpen}
-                    onClose={handleReEnrollmentClose}
-                    enrollmentId={plan.device.enrolment_id}
-                    qrCode={qrCode}
+                    isTelevision={true}
                 />
             )}
         </div>
     );
 };
 
-export default DeviceDetailsView;
+export default DeviceDetailsViewTv;

@@ -57,11 +57,11 @@ export const getDevices = async (params = {}) => {
     }
 };
 
-export const getActionsHistory = async (deviceId) => {
+export const getActionsHistory = async (isDevice, id) => {
     try {
-        const params = {
-            device_id: deviceId,
-        };
+        const params = isDevice
+            ? { device_id: id }
+            : { television_id: id };
 
         const response = await axiosInstance.get(`/actions/`, {params});
         return response.data;
@@ -92,11 +92,11 @@ export const getDeviceById = async (deviceId) => {
 };
 
 
-export const getLastLocation = async (deviceId) => {
+export const getLastLocation = async (isDevice, id) => {
     try {
-        const params = {
-            device_id: deviceId,
-        };
+        const params = isDevice
+            ? { device_id: id }
+            : { television_id: id };
 
         const response = await axiosInstance.get(`/devices/locations/`, { params });
         const data = response.data;
@@ -131,12 +131,13 @@ export const updateDevice = async (deviceId, deviceData) => {
 };
 
 // Funciones para acciones específicas
-export const blockDevice = async (deviceId) => {
+export const blockDevice = async (deviceId, isTelevision) => {
     try {
         const userId = getUserId();
 
         const data = {
             applied_by_id: userId,
+            isTelevision: isTelevision,
             payload: null
         };
 
@@ -149,12 +150,13 @@ export const blockDevice = async (deviceId) => {
     }
 };
 
-export const unblockDevice = async (deviceId, params) => {
+export const unblockDevice = async (deviceId, params, isTelevision) => {
     try {
         const userId = getUserId();
 
         const data = {
             applied_by_id: userId,
+            isTelevision: isTelevision,
             payload: {
                 ...params
             }
@@ -169,15 +171,17 @@ export const unblockDevice = async (deviceId, params) => {
     }
 };
 
-export const locateDevice = async (deviceId) => {
+export const locateDevice = async (deviceId, isTelevision) => {
     try {
         const userId = getUserId();
 
         const data = {
             applied_by_id: userId,
+            isTelevision: isTelevision,
             payload: null
         };
 
+        console.error(`Device ${deviceId}:`, data);
         const response = await axiosInstance.post(`/device-actions/${deviceId}/locate`, data);
         return response.data;
     } catch (error) {
@@ -186,12 +190,13 @@ export const locateDevice = async (deviceId) => {
     }
 };
 
-export const releaseDevice = async (deviceId) => {
+export const releaseDevice = async (deviceId, isTelevision) => {
     try {
         const userId = getUserId();
 
         const data = {
             applied_by_id: userId,
+            isTelevision: isTelevision,
             payload: null
         };
 
@@ -252,12 +257,13 @@ export const removeDeviceSim = async (deviceId, simId) => {
     }
 };
 
-export const sendNotification = async (deviceId, data) => {
+export const sendNotification = async (deviceId, data, isTelevision) => {
     try {
         const userId = getUserId();
 
         const notificationData = {
             applied_by_id: userId,
+            isTelevision: isTelevision,
             payload: {
                 ...data
             }
