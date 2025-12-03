@@ -150,6 +150,22 @@ export const blockDevice = async (deviceId, isTelevision) => {
     }
 };
 
+export const deleteDevice = async (deviceId, isTelevision) => {
+    try {
+        console.log("Sending Delete Device");
+        if (!isTelevision) {
+            const response = await axiosInstance.delete(`/devices/${deviceId}`);
+            return response.data;
+        } else {
+            const response = await axiosInstance.delete(`/televisions/${deviceId}`);
+            return response.data;   
+        }
+    } catch (error) {
+        console.error(`Error blocking device with ID ${deviceId}:`, error);
+        throw error;
+    }
+};
+
 export const unblockDevice = async (deviceId, params, isTelevision) => {
     try {
         const userId = getUserId();

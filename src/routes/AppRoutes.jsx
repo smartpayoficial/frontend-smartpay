@@ -121,13 +121,13 @@ const AppRoutes = () => {
                             
                             <Route element={<PrivateRoute allowedRoles={['Superadmin','Store Admin']} />}>
                                 <Route path="dashboard" element={<DashboardPage />} />
+                                <Route path="devices-management" element={<DeviceManagementPage />} />
 
                             </Route>
 
                             {/* Dashboard: solo para Superadmin y Store Admin */}
                             <Route element={<PrivateRoute allowedRoles={['Store Admin']} />}>
                                 <Route path="vendors-management" element={<VendorManagementPage />} />
-                                <Route path="devices-management" element={<DeviceManagementPage />} />
                                 <Route path="reports" element={<ReportsPage />} />
                                 <Route path="configuration" element={<ConfigurationPage />} />
                             </Route>

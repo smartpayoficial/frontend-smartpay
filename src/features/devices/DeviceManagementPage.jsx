@@ -5,6 +5,7 @@ import {
   updateDevice,
   blockDevice,
   unblockDevice,
+  deleteDevice,
   locateDevice,
   releaseDevice,
   sendNotification
@@ -21,6 +22,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { getValueByPath } from '../../common/utils/helpers';
 import { useSearchParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
+import { useAuth } from '../../common/context/AuthProvider';
 
 const DeviceManagementPage = () => {
   const [devices, setDevices] = useState([]);
@@ -49,6 +51,7 @@ const DeviceManagementPage = () => {
   });
 
   const userRole = 'superadmin';
+  const { user } = useAuth();
 
   useEffect(() => {
     if (didMount.current) return;
@@ -61,6 +64,8 @@ const DeviceManagementPage = () => {
       isDevice = false
     }
 
+    console.log("DeviceId", deviceId);
+    console.log("IsDevice", isDevice);
     if (deviceId) {
       handleViewDetails(isDevice, deviceId);
     } else {
@@ -106,6 +111,7 @@ const DeviceManagementPage = () => {
     setLoading(true);
     try {
       const planDevice = await getPlanByDeviceId(isDevice, id);
+      console.log("Plan", planDevice);
       const lastLocationResp = await getLastLocation(isDevice, id);
 
       const params = isDevice
@@ -123,7 +129,11 @@ const DeviceManagementPage = () => {
       }
 
       setIsDevice(isDevice);
+
+      searchParams.delete('deviceId');
+      searchParams.delete('televisionId');
       searchParams.set(isDevice ? 'deviceId' : "televisionId", id);
+
       setSearchParams(searchParams);
 
       setPayments(paymentsResponse);
@@ -134,6 +144,35 @@ const DeviceManagementPage = () => {
       toast.error('Error al cargar los detalles del dispositivo.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const onDelete = async (deviceId, isDevice) => {
+    try {
+      const result = await Swal.fire({
+        title: isDevice ? '¿Eliminar dispositivo?' : '¿Eliminar telvisor?',
+        text: '¿Estás seguro de que quieres eliminar el registro?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#16a34a',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Sí, registrar',
+        cancelButtonText: 'Cancelar'
+      });
+
+      if (!result.isConfirmed) return;
+
+      await deleteDevice(deviceId, !isDevice);
+      if (isDevice) {
+        toast.success('Dispositivo eliminado con éxito.');
+      } else {
+        toast.success('Televisor eliminado con éxito.');
+      }
+
+      fetchDevices();
+    } catch (err) {
+      const msg = err.response?.data?.detail || err.message || 'Error desconocido';
+      toast.error(`Error al desbloquear dispositivo: ${msg}`);
     }
   };
 
@@ -403,7 +442,7 @@ const DeviceManagementPage = () => {
         </div>
       )}
 
-      {selectPlan?.deviceId ? (
+      {selectPlan?.device_id ? (
         <DeviceDetailsView
           plan={selectPlan}
           location={lastLocation}
@@ -451,6 +490,8 @@ const DeviceManagementPage = () => {
                 onViewDetails={handleViewDetails}
                 columnFilters={columnFilters}
                 onColumnFilterChange={handleColumnFilterChange}
+                role={user.role}
+                onDelete={onDelete}
               />
             )}
           </div>

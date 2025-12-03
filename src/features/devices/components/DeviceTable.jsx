@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { PAGE_SIZE } from '../../../common/utils/const';
-import { BadgeCheck, Lock, LockOpenIcon } from 'lucide-react';
+import { TrashIcon, BadgeCheck, Lock, LockOpenIcon } from 'lucide-react';
 import AndroidIcon from '../../../assets/icons/android-icon.png';
 import TvIcon from '../../../assets/icons/television-icon.png';
-
-const DeviceTable = ({ devices = [], onViewDetails, columnFilters, onColumnFilterChange }) => {
+ 
+const DeviceTable = ({ devices = [], onViewDetails, columnFilters, onColumnFilterChange, role, onDelete }) => {
   const [currentPage, setCurrentPage] = useState(1);
 
   const paginatedDevices = useMemo(() => {
@@ -50,7 +50,7 @@ const DeviceTable = ({ devices = [], onViewDetails, columnFilters, onColumnFilte
             {renderTh('model', 'Modelo')}
             {renderTh('brand', 'Marca')}
             {renderTh('imei', 'IMEI 1')}
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
               Acciones
             </th>
           </tr>
@@ -124,16 +124,32 @@ const DeviceTable = ({ devices = [], onViewDetails, columnFilters, onColumnFilte
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => {
-                        const isDevice = device?.device_id ? true : false;
-                        const id = isDevice ? device.device_id : device.television_id;
-                        onViewDetails(isDevice, id);
-                      }}
-                      className="text-blue-600 hover:text-blue-900 ml-4"
-                    >
-                      Ver Detalles
-                    </button>
+                    <div className="flex items-center justify-end gap-3">
+                      <button
+                        onClick={() => {
+                          const isDevice = device?.device_id ? true : false;
+                          const id = isDevice ? device.device_id : device.television_id;
+                          onViewDetails(isDevice, id);
+                        }}
+                        className="text-blue-600 hover:text-blue-900"
+                      >
+                        Ver Detalles
+                      </button>
+
+                      {role === 'Superadmin' && (
+                        <button
+                          onClick={() => {
+                            const isDevice = device?.device_id ? true : false;
+                            const id = isDevice ? device.device_id : device.television_id;
+                            onDelete(id, isDevice);
+                          }}
+                          className="text-red-600 hover:text-red-900"
+                          title="Eliminar Vendedor"
+                        >
+                          <TrashIcon className="h-5 w-5" />
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               );
