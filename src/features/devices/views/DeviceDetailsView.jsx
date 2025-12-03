@@ -551,7 +551,7 @@ const DeviceDetailsView = ({
                     {/* Acciones del Dispositivo */}
                     <div className="bg-gray-50 p-6 rounded-lg shadow-inner flex-grow">
                         <h3 className="text-2xl font-semibold text-gray-800 mb-4">Acciones del Dispositivo</h3>
-                        {/* <div className="mb-4">
+                        <div className="mb-4">
                             {isSuperAdmin && getLastBlockState() == 'unblock' && (
                                 <button
                                     onClick={() => onBlock(plan.device.device_id)}
@@ -568,28 +568,28 @@ const DeviceDetailsView = ({
                                     Desbloquear
                                 </button>
                             )}
-                        </div> */}
-                        <div className="mb-4 flex flex-col sm:flex-row gap-2">
+                        </div>
+                        {/* <div className="mb-4 flex flex-col sm:flex-row gap-2"> */}
                             {/* Botón de Bloquear */}
-                            {isSuperAdmin && (
+                            {/* {isSuperAdmin && (
                                 <button
                                     onClick={() => onBlock(plan.device.device_id)}
                                     className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out w-full"
                                 >
                                     Bloquear
                                 </button>
-                            )}
+                            )} */}
 
                             {/* Botón de Desbloquear */}
-                            {isSuperAdmin && (
+                            {/* {isSuperAdmin && (
                                 <button
                                     onClick={() => onUnblock(plan.device.device_id)}
                                     className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out w-full"
                                 >
                                     Desbloquear
                                 </button>
-                            )}
-                        </div>
+                            )} */}
+                        {/* </div> */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                             {isSuperAdmin && (
