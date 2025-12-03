@@ -1,141 +1,138 @@
-import { use, useEffect, useMemo, useState } from 'react';
-import Cards from '../../common/components/ui/Cards';
-import { PieChart, BarChart } from '../../common/components/ui/Charts';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../common/context/AuthProvider';
 import { showNewUserAlert } from '../../common/utils/auth';
 import { useNavigate } from 'react-router-dom';
 import ReportsPage from '../reports/ReportsPage.jsx';
-import { getCurrentStore } from '../../common/utils/helpers.js';
-import { set } from 'lodash';
+import { getStoreById, getStores } from '../../api/stores';
+import { getCurrentUser } from '../../common/utils/helpers.js';
+import { getPlans } from '../../api/plans';
+import { RocketLaunchIcon } from '@heroicons/react/24/outline';
 
 const Dashboard = () => {
-    const { user, logout } = useAuth();
-    const [isNew, setIsNew] = useState(false);
+    const { user } = useAuth();
     const navigate = useNavigate();
-    const [nameStore, setNameStore] = useState(null);
-
-    const fetchUserData = async () => {
-        await showNewUserAlert(user, setIsNew, logout, navigate);
-    }
+    const [storeName, setStoreName] = useState('');
+    const [tokensAvailable, setTokensAvailable] = useState(0);
+    const [devicesUsed, setDevicesUsed] = useState(0);
+    const [storeCount, setStoreCount] = useState(0);
+    const [soldLicensesCount, setSoldLicensesCount] = useState(0);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const data = getCurrentStore()
-        setNameStore(data?.nombre)
-        fetchUserData();
-    }, [])
+        const fetchData = async () => {
+            setLoading(true);
+            const currentUser = getCurrentUser();
 
-    const stats = useMemo(() => ({
-        activeDevices: 1245,
-        blockedDevices: 87,
-        soldDevices: 532,
-        pendingPayments: 23,
-    }), []);
+            if (currentUser.role === 'Superadmin') {
+                try {
+                    // Request a large page size to get all stores, assuming the API supports it
+                    const storesResponse = await getStores({ page_size: 1000 });
+                    const allStores = storesResponse.results || storesResponse; // Handle paginated or simple array response
 
-    const nivoPieData = useMemo(() => {
-        const dataForPie = [
-            { id: 'Activos', label: 'Activos', value: stats.activeDevices, color: '#40ace8' },
-            { id: 'Bloqueados', label: 'Bloqueados', value: stats.blockedDevices, color: '#EF4444' },
-            { id: 'Vendidos', label: 'Vendidos', value: stats.soldDevices, color: '#3B82F6' },
-        ];
-        return dataForPie;
-    }, [stats]);
+                    setStoreCount(storesResponse.count || allStores.length);
 
-    const nivoBarData = useMemo(() => {
-        const chartJsLabels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-        const chartJsDatasets = [
-            {
-                label: 'Dispositivos activos',
-                data: [120, 190, 300, 500, 200, 300, 400, 500, 600, 700, 800, 900],
-            },
-            {
-                label: 'Dispositivos bloqueados',
-                data: [20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130],
-            },
-        ];
+                    // Sum available tokens from each store to get total sold licenses, as per user instruction
+                    const totalSold = allStores.reduce((sum, store) => sum + (store.tokens_disponibles || 0), 0);
+                    setSoldLicensesCount(totalSold);
 
-        return chartJsLabels.map((label, i) => {
-            const nivoObject = { month: label };
-            chartJsDatasets.forEach(dataset => {
-                nivoObject[dataset.label] = dataset.data[i];
-            });
-            return nivoObject;
-        });
-    }, []);
+                } catch (error) {
+                    console.error("Error fetching superadmin data:", error);
+                }
+            } else if (currentUser.store && currentUser.store.id) {
+                try {
+                    const fetchedStore = await getStoreById(currentUser.store.id);
+                    setStoreName(fetchedStore.nombre);
+                    setTokensAvailable(fetchedStore.tokens_disponibles || 0);
+                    
+                    const allPlans = await getPlans(); // This is correctly filtered for the store user
+                    setDevicesUsed(allPlans.length); // Reverted to original logic
+                } catch (error) {
+                    console.error("Error fetching store data:", error);
+                }
+            }
+            setLoading(false);
+            showNewUserAlert(user, navigate);
+        };
 
-    const nivoBarKeys = ['Dispositivos activos', 'Dispositivos bloqueados'];
+        if (user) {
+            fetchData();
+        }
+    }, [user, navigate]);
 
-    const barColors = {
-        'Dispositivos activos': '#10B981',
-        'Dispositivos bloqueados': '#EF4444',
-    };
+    const realTokensAvailable = tokensAvailable - devicesUsed;
+
+    const welcomeMessage = useMemo(() => {
+        if (loading) return '...';
+        if (user?.role === 'Superadmin') return 'Superadmin';
+        return storeName || 'de nuevo';
+    }, [loading, user, storeName]);
 
     return (
-        // Contenedor principal con fondo gris claro y padding
-        <div className="min-h-screen bg-gray-100 ">
-            {/* Contenedor blanco para todo el contenido del dashboard */}
-            <main className="bg-white rounded-lg shadow-md p-4 sm:p-6 lg:p-8">
-                {/* Card tipo Hero para el mensaje de bienvenida */}
-                <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-6 sm:p-8 rounded-lg shadow-lg mb-6 sm:mb-8 text-center">
-                    <h2 className="text-3xl sm:text-4xl font-bold mb-2">
-                        ¡Bienvenido {nameStore ? `a ${nameStore}` : 'de nuevo'}!
-                    </h2>
-                    <p className="text-lg sm:text-xl opacity-90">Gestión eficiente de tus dispositivos con SmartPay.</p>
+        <div className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8 relative">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-8">
+                <div className="md:col-span-2 lg:col-span-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-6 sm:p-8 rounded-lg shadow-xl flex flex-col sm:flex-row items-center justify-between text-center sm:text-left">
+                    <div className="flex-1">
+                        <h2 className="text-2xl sm:text-4xl font-bold mb-1">
+                            ¡Bienvenido, {welcomeMessage}!
+                        </h2>
+                        <p className="text-base sm:text-lg opacity-90">Gestión eficiente de tus dispositivos con SmartPay.</p>
+                    </div>
+                    <RocketLaunchIcon className="h-16 w-16 sm:h-20 sm:w-20 opacity-30 mt-4 sm:mt-0 hidden md:block" />
                 </div>
 
+                <div className="md:col-span-1 lg:col-span-2">
+                    {user?.role === 'Superadmin' ? (
+                        <>
+                            <h3 className="bg-gradient-to-r to-blue-500 from-indigo-600 p-2 rounded-lg text-2xl font-bold text-white shadow-lg mb-4 text-center md:text-center">Estadísticas Globales</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-200 relative text-center">
+                                    <span className="text-4xl sm:text-5xl font-bold text-blue-600">{loading ? '...' : storeCount.toLocaleString()}</span>
+                                    <span className="block text-sm sm:text-base font-semibold text-blue-600 mt-2">Tiendas Registradas</span>
+                                </div>
+                                <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-200 relative text-center">
+                                    <span className="text-4xl sm:text-5xl font-bold text-gray-700">{loading ? '...' : soldLicensesCount.toLocaleString()}</span>
+                                    <span className="block text-sm sm:text-base font-semibold text-gray-700 mt-2">Licencias Vendidas</span>
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <h3 className="bg-gradient-to-r to-blue-500 from-indigo-600 p-2 rounded-lg text-2xl font-bold text-white shadow-lg mb-4 text-center md:text-center">Licencias</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-200 relative text-center">
+                                    <span className="text-4xl sm:text-5xl font-bold text-blue-600">{loading ? '...' : tokensAvailable.toLocaleString()}</span>
+                                    <span className="block text-sm sm:text-base font-semibold text-blue-600 mt-2">Aprobadas</span>
+                                </div>
+                                <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-200 relative text-center">
+                                    <span className="text-4xl sm:text-5xl font-bold text-gray-700">{loading ? '...' : devicesUsed.toLocaleString()}</span>
+                                    <span className="block text-sm sm:text-base font-semibold text-gray-700 mt-2">Usadas</span>
+                                </div>
+                                <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-200 relative text-center">
+                                    <span className={`text-4xl sm:text-5xl font-bold ${realTokensAvailable === 0 ? 'text-red-500' : 'text-green-500'}`}>
+                                        {loading ? '...' : realTokensAvailable.toLocaleString()}
+                                    </span>
+                                    <span className={`block text-sm sm:text-base font-semibold mt-2 ${realTokensAvailable === 0 ? 'text-red-500' : 'text-green-500'}`}>
+                                        Disponibles
+                                    </span>
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </div>
+            </div>
+            <main className="bg-white rounded-lg shadow-md p-4 sm:p-6 lg:p-8">
                 <ReportsPage />
-
-                {/* <header className="mb-6">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Dashboard SmartPay</h1>
-                </header>
-
-                <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-                    <Cards
-                        title="Dispositivos activos"
-                        value={stats.activeDevices.toLocaleString()}
-                        icon="device"
-                        color="green"
-                        change="+12% este mes"
-                    />
-                    <Cards
-                        title="Dispositivos bloqueados"
-                        value={stats.blockedDevices.toLocaleString()}
-                        icon="block"
-                        color="red"
-                        change="+5% este mes"
-                    />
-                    <Cards
-                        title="Dispositivos vendidos (total)"
-                        value={stats.soldDevices.toLocaleString()}
-                        icon="sold"
-                        color="blue"
-                        change="+23% este mes"
-                    />
-                    <Cards
-                        title="Pagos pendientes"
-                        value={stats.pendingPayments.toLocaleString()}
-                        icon="payment"
-                        color="yellow"
-                        change="-3% este mes"
-                    />
-                </section>
-
-                <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                    <PieChart
-                        data={nivoPieData}
-                        title="Distribución de Dispositivos"
-                        subTitle="Estado general del inventario"
-                    />
-                    <BarChart
-                        data={nivoBarData}
-                        keys={nivoBarKeys}
-                        indexBy="month"
-                        title="Actividad Mensual de Dispositivos"
-                        subTitle="Comparativa mensual"
-                        barColorsMap={barColors}
-                        groupMode="grouped"
-                    />
-                </section> */}
             </main>
+            <a
+                href="https://wa.me/51933392072"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="fixed bottom-6 right-6 flex items-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 z-50"
+            >
+                <img src='/assets/logo.png' className="w-6 h-6 mr-2 bg-white rounded-full p-1" alt="SmartPay Logo" />
+                <span className="hidden md:inline">Soporte SmartPay</span>
+                <span className="inline md:hidden">Soporte</span>
+            </a>
         </div>
     );
 };

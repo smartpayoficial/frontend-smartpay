@@ -8,7 +8,7 @@ import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { requestPasswordReset } from '../../api/auth';
 import { handlePasswordReset, showNewUserAlert } from '../../common/utils/auth';
-import { getPayments} from '../../api/payments';
+import { getPayments } from '../../api/payments';
 
 const MySwal = withReactContent(Swal);
 
@@ -104,12 +104,12 @@ const ClientDashboardPage = () => {
         const resultados = [];
 
         if (Array.isArray(data) && data.length > 0) {
-             for (const plan of data) {
+            for (const plan of data) {
                 const params = { device_id: plan.device_id, state: 'Approved' };
-                const paymentsResponse = await getPayments(params);        
+                const paymentsResponse = await getPayments(params);
                 resultados.push(paymentsResponse);
-             };
-             
+            };
+
         }
 
         console.log("data", resultados);
@@ -133,7 +133,7 @@ const ClientDashboardPage = () => {
             return null;
         }
 
-         if (!Array.isArray(paymentsDevices) || paymentsDevices.length == 0) {
+        if (!Array.isArray(paymentsDevices) || paymentsDevices.length == 0) {
             return 0;
         }
 
@@ -164,7 +164,7 @@ const ClientDashboardPage = () => {
     }
 
     const getPendingValue = (deviceId, value) => {
-         if (!Array.isArray(paymentsDevices) || paymentsDevices.length == 0) {
+        if (!Array.isArray(paymentsDevices) || paymentsDevices.length == 0) {
             return 0;
         }
 
@@ -242,48 +242,49 @@ const ClientDashboardPage = () => {
     }
 
     return (
-        <div className="bg-gradient-to-br from-white to-gray-100 min-h-screen">
-            {/* Navbar */}
-            {/* Encabezado normal para desktop */}
-            <div className="flex justify-between items-center p-4 sm:p-6 lg:px-8 border-b border-gray-300 bg-white shadow-sm sticky top-0 z-10">
-                <div className="flex gap-3 items-center">
-                    <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-800">
-                        <span className="text-indigo-600">SmartPay</span> &nbsp;| Mis Dispositivos
-                    </h1>
-                </div>
-
-                {/* Visible solo en pantallas sm o más grandes */}
-                <button
-                    className="hidden sm:inline-block px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg shadow transition duration-150 ease-in-out"
-                    onClick={() => logout()}
-                >
-                    <div className="flex items-center gap-1">
-                        <p>Cerrar sesión</p>
-                        <ArrowLeftStartOnRectangleIcon className="h-7 w-7" />
-                    </div>
-                </button>
+        <div className="bg-white min-h-screen">
+            {/* Encabezado principal para el móvil */}
+            <div className="bg-indigo-600 text-white p-4 shadow-md">
+                <h1 className="text-xl font-bold text-center">{user?.store?.nombre || 'SmartPay'}</h1>
             </div>
 
-            {/* Botón flotante solo visible en móviles */}
-            <button
-                className="sm:hidden fixed bottom-4 right-4 z-50 w-14 h-14 flex items-center justify-center bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition duration-200 ease-in-out"
-                onClick={() => logout()}
-                title="Cerrar sesión"
-            >
-                <ArrowLeftStartOnRectangleIcon className="h-7 w-7" />
-            </button>
+            {/* Contenedor principal para el contenido */}
+            <div className="container mx-auto px-4 pt-6 pb-20">
 
+                {/* Tarjeta de bienvenida */}
+                <div className="bg-indigo-100 text-black-800 p-6 rounded-2xl shadow-lg relative overflow-hidden">
+                    {/* Contenido principal de la tarjeta */}
+                    <h2 className="text-2xl font-bold mb-1 z-10">
+                        ¡Hola <br />
+                        <span className="text-indigo-600">{user?.name}!</span> 👋
+                    </h2>
+                    {/* <p className="text-sm font-semibold z-10">
+                        Bienvenido a <span className="text-indigo-900">{user?.store?.nombre}</span>
+                    </p> */}
 
-            {/* Dispositivos */}
-            <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {/* Figura decorativa */}
+                    <img
+                        src="/assets/figura.png" // Asegúrate de que esta ruta sea correcta
+                        alt="Figura decorativa"
+                        className="absolute bottom-0 right-4 w-26 h-32 opacity-40 transform translate-x-1/4 translate-y-1/4 z-0"
+                    />
+                </div>
+
+                {/* Título de la sección de dispositivos */}
+                <div className="mt-8 mb-4">
+                    <h2 className="text-lg font-bold text-gray-800 ml-2">Mis Dispositivos</h2>
+                </div>
+
+                {/* Lista de dispositivos */}
+                <div className="grid grid-cols-1 gap-6 m-2">
+                    {/* Tu .map para customerDevices permanece aquí */}
                     {customerDevices.map((device) => (
                         <div
                             key={device.device.device_id}
-                            className="bg-white p-6 rounded-2xl shadow-xl border border-gray-200 hover:shadow-2xl transition-all duration-300"
+                            className="bg-white p-6 rounded-2xl shadow-md transition-all duration-300"
                         >
                             <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-xl font-semibold text-gray-800">{device.device.model}</h2>
+                                <h3 className="text-base font-semibold text-gray-800">{device.device.model}</h3>
                                 <span
                                     className={`px-3 py-1 text-xs font-bold uppercase rounded-full tracking-wide ${getStatusClass(device)}`}
                                 >
@@ -323,26 +324,26 @@ const ClientDashboardPage = () => {
                                     <span className="font-medium">Valor pendiente:</span>
                                     {Number(device.value) > 0 ? (
                                         <span className="text-red-600 font-bold">
-                                            {Number(getPendingValue(device.device_id, device.value)).toLocaleString('en-US', {
-                                                minimumFractionDigits: 2,
-                                                maximumFractionDigits: 2,
+                                            {Number(getPendingValue(device.device_id, device.value)).toLocaleString('es-CO', {
+                                                style: 'currency',
+                                                currency: 'COP',
                                             })}
                                         </span>
                                     ) : (
-                                        <span>0.00</span>
+                                        <span>$0.00</span>
                                     )}
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="font-medium">Valor dispositivo:</span>
                                     {Number(device.value) > 0 ? (
                                         <span className="text-green-600 font-bold">
-                                            {Number(device.value).toLocaleString('en-US', {
-                                                minimumFractionDigits: 2,
-                                                maximumFractionDigits: 2,
+                                            {Number(device.value).toLocaleString('es-CO', {
+                                                style: 'currency',
+                                                currency: 'COP',
                                             })}
                                         </span>
                                     ) : (
-                                        <span>0.00</span>
+                                        <span>$0.00</span>
                                     )}
                                 </div>
                             </div>
@@ -356,21 +357,20 @@ const ClientDashboardPage = () => {
                                     <DeviceTabletIcon className="h-5 w-5 mr-2" />
                                     Ver Detalles
                                 </Link>
-                                {/* {device.value > 0 && (
-                                    <Link
-                                        to={`/client/make-payment/${device.plan_id}`}
-                                        state={{ plan: device }}
-                                        className="flex-1 inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-blue-300 shadow"
-                                    >
-                                        <CreditCardIcon className="h-5 w-5 mr-2" />
-                                        Realizar Pago
-                                    </Link>
-                                )} */}
                             </div>
                         </div>
                     ))}
                 </div>
             </div>
+
+            {/* Botón flotante para cerrar sesión */}
+            <button
+                className="fixed bottom-4 right-4 z-50 w-14 h-14 flex items-center justify-center bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition duration-200 ease-in-out"
+                onClick={() => logout()}
+                title="Cerrar sesión"
+            >
+                <ArrowLeftStartOnRectangleIcon className="h-7 w-7" />
+            </button>
         </div>
 
     );

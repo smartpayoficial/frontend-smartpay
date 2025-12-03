@@ -1,4 +1,3 @@
-// src/features/auth/ResetPassword.jsx
 import { useState } from 'react';
 import { EyeIcon, EyeSlashIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 

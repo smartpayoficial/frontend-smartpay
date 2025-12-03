@@ -16,6 +16,7 @@ const StoreFormModal = ({ isOpen, onClose, initialData, onSubmit, roles, getCoun
         country_input_name: '',
         admin_id: '',
         admin_input_name: '',
+        add_tokens: 0,
 
     });
     const [hasSearchedAdmins, setHasSearchedAdmins] = useState(false);
@@ -235,6 +236,18 @@ const StoreFormModal = ({ isOpen, onClose, initialData, onSubmit, roles, getCoun
         onSubmit(dataToSubmit);
     };
 
+    const handleAddTokens = () => {
+        // Asegúrate de que el valor sea un número y sea mayor que 0
+        const tokensToAdd = parseInt(formData.add_tokens, 10);
+        if (!isNaN(tokensToAdd) && tokensToAdd > 0) {
+            setFormData(prevFormData => ({
+                ...prevFormData,
+                tokens_disponibles: prevFormData.tokens_disponibles + tokensToAdd,
+                add_tokens: 0, // Resetea el campo
+            }));
+        }
+    };
+
     return (
         <Transition appear show={isOpen} as={Fragment}>
             <Dialog as="div" className="relative z-50" onClose={onClose}>
@@ -368,11 +381,39 @@ const StoreFormModal = ({ isOpen, onClose, initialData, onSubmit, roles, getCoun
                                             )}
                                         </div>
                                         <div>
-                                            <label htmlFor="tokens_disponibles" className="block text-sm font-medium text-gray-700">Limite Dispositivos *</label>
-                                            <input type="number" name="tokens_disponibles" id="tokens_disponibles" value={formData.tokens_disponibles} onChange={handleChange} autoComplete='off' className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blueo-500 focus:ring-blueo-500 sm:text-sm" />
+                                            <label htmlFor="tokens_disponibles" className="block text-sm font-medium text-gray-700">Límite Dispositivos Actual *</label>
+                                            <input
+                                                type="number"
+                                                name="tokens_disponibles"
+                                                id="tokens_disponibles"
+                                                value={formData.tokens_disponibles}
+                                                disabled
+                                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blueo-500 focus:ring-blueo-500 sm:text-sm bg-gray-100 cursor-not-allowed"
+                                            />
                                             {formErrors.tokens_disponibles && (
                                                 <p className="text-red-500 text-xs mt-1">{formErrors.tokens_disponibles}</p>
                                             )}
+                                        </div>
+                                        <div className="flex items-end gap-2">
+                                            <div className="flex-grow">
+                                                <label htmlFor="add_tokens" className="block text-sm font-medium text-green-700">Cant. Licencias</label>
+                                                <input
+                                                    type="number"
+                                                    name="add_tokens"
+                                                    id="add_tokens"
+                                                    value={formData.add_tokens}
+                                                    onChange={handleChange}
+                                                    autoComplete='off'
+                                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blueo-500 focus:ring-blueo-500 sm:text-sm"
+                                                />
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={handleAddTokens} // Crearemos esta función
+                                                className="inline-flex justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2"
+                                            >
+                                                Agregar
+                                            </button>
                                         </div>
                                         {/* El resto de los campos de formulario comentados */}
 

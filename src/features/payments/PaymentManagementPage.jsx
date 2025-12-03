@@ -2,15 +2,15 @@ import React, { useState, useEffect, useCallback } from 'react';
 import PaymentTable from './components/PaymentTable.jsx';
 import PaymentsFlow from './PaymentsFlow.jsx';
 
-import { PlusIcon, ChevronLeftIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, ExclamationCircleIcon, LifebuoyIcon } from '@heroicons/react/24/outline';
 import Swal from 'sweetalert2';
 import { toast } from 'react-toastify';
 
 import { getPayments, createPayment } from '../../api/payments';
 import { getUsers } from '../../api/users';
-import { createEnrolment } from '../../api/enrolments';
-import { createDevice } from '../../api/devices';
-import { createPlan, uploadContract } from '../../api/plans';
+import { getPlans, createPlan, uploadContract } from '../../api/plans';
+import { getStoreById } from '../../api/stores';
+import { getCurrentUser } from '../../common/utils/helpers.js';
 
 const PaymentManagementPage = () => {
     const [payments, setPayments] = useState([]);
@@ -19,6 +19,12 @@ const PaymentManagementPage = () => {
     const [currentStep, setCurrentStep] = useState(0);
     const [newInvoiceData, setNewInvoiceData] = useState({});
     const [customers, setCustomers] = useState([]);
+    const [plans, setPlans] = useState([]);
+
+    // Nuevos estados para la gestión de licencias
+    const [tokensAvailable, setTokensAvailable] = useState(0);
+    const [devicesUsed, setDevicesUsed] = useState(0);
+    const [loadingLicenses, setLoadingLicenses] = useState(true);
 
     const fetchPayments = useCallback(async () => {
         setLoading(true);
@@ -26,6 +32,24 @@ const PaymentManagementPage = () => {
         try {
             const data = await getPayments();
             setPayments(data);
+        } catch (err) {
+            console.error('Error al cargar pagos:', err);
+            setError('No se pudieron cargar los pagos. Inténtalo de nuevo más tarde.');
+            toast.error('Error al cargar pagos.');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    /**
+     * Método para cargar planes 
+     */
+    const fetchPlans = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+              const plans = await getPlans();
+            setPlans(plans);
         } catch (err) {
             console.error('Error al cargar pagos:', err);
             setError('No se pudieron cargar los pagos. Inténtalo de nuevo más tarde.');
@@ -45,10 +69,30 @@ const PaymentManagementPage = () => {
         }
     }, []);
 
+    const fetchLicenses = useCallback(async () => {
+        setLoadingLicenses(true);
+        try {
+            const currentUser = getCurrentUser();
+            const storeId = currentUser?.store?.id;
+
+            if (storeId) {
+                const store = await getStoreById(storeId);
+              
+                setTokensAvailable(store.tokens_disponibles);
+                setDevicesUsed(plans.length);
+            }
+        } catch (err) {
+            console.error('Error al cargar licencias:', err);
+        } finally {
+            setLoadingLicenses(false);
+        }
+    }, []);
+
     useEffect(() => {
-        fetchPayments();
+        fetchPlans();
         fetchCustomers();
-    }, [fetchPayments, fetchCustomers]);
+        fetchLicenses();
+    }, [fetchPlans, fetchCustomers, fetchLicenses]);
 
     const handleStartNewInvoice = () => {
         setNewInvoiceData({});
@@ -58,6 +102,10 @@ const PaymentManagementPage = () => {
     const handleBackToTable = () => {
         setCurrentStep(0);
         setNewInvoiceData({});
+    };
+
+    const handleContactSupport = () => {
+        window.open('https://wa.me/51933392072', '_blank', 'noopener,noreferrer');
     };
 
     const handlePaymentsFlowFinalize = async (finalData) => {
@@ -92,26 +140,26 @@ const PaymentManagementPage = () => {
                 user_id: customer.user_id,
                 vendor_id: authenticatedUser.user_id
             };
-            console.log('Sending Plan Payload:', JSON.stringify(planPayload, null, 2)); // <-- AGREGAR ESTO
+            console.log('Sending Plan Payload:', JSON.stringify(planPayload, null, 2));
 
             const planResponse = await createPlan(planPayload);
             console.log('Plan created:', planResponse);
-            
+
             const planId = planResponse.plan_id;
             if (planResponse && planId) {
                 const formData = new FormData();
                 formData.append('plan_id', planResponse.plan_id);
-                formData.append('file', signedContractFile); 
+                formData.append('file', signedContractFile);
 
                 console.log(formData);
-                
 
-                await uploadContract(formData); 
+
+                await uploadContract(formData);
             }
-            console.log('Plan created with ID:', planId); // <-- AGREGAR ESTO
+            console.log('Plan created with ID:', planId);
 
             // --- Initial Payment Payload ---
-              if (initialPayment.value !== null && initialPayment.value !== undefined && initialPayment.value !== '' && initialPayment.value > 0) {
+            if (initialPayment.value !== null && initialPayment.value !== undefined && initialPayment.value !== '' && initialPayment.value > 0) {
                 const initialPaymentPayload = {
                     value: initialPayment.value,
                     method: initialPayment.method,
@@ -122,10 +170,10 @@ const PaymentManagementPage = () => {
                     television_id: televisionId,
                     plan_id: planId
                 };
-                
-                console.log('Sending Initial Payment Payload:', JSON.stringify(initialPaymentPayload, null, 2)); // <-- AGREGAR ESTO
+
+                console.log('Sending Initial Payment Payload:', JSON.stringify(initialPaymentPayload, null, 2));
                 const paymentResponse = await createPayment(initialPaymentPayload);
-                console.log('Initial Payment created:', paymentResponse); // <-- AGREGAR ESTO
+                console.log('Initial Payment created:', paymentResponse);
             }
 
             Swal.close();
@@ -138,7 +186,7 @@ const PaymentManagementPage = () => {
                 showConfirmButton: false
             });
 
-            fetchPayments();
+            fetchPlans();
             setCurrentStep(0);
             setNewInvoiceData({});
 
@@ -154,6 +202,43 @@ const PaymentManagementPage = () => {
             });
             toast.error(`Error al registrar venta: ${errorMessage}`);
         }
+    };
+
+    const realTokensAvailable = tokensAvailable - devicesUsed;
+
+    const renderHeader = () => {
+        const canRegister = realTokensAvailable > 0;
+
+        return (
+            <div className="flex justify-between items-center mb-6 border-b pb-4">
+                <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                    <span className="mr-2">💰</span> Ventas Realizadas
+                </h1>
+                {loadingLicenses ? (
+                    <p className="text-gray-500">Cargando licencias...</p>
+                ) : (
+                    <>
+                        {canRegister ? (
+                            <button
+                                onClick={handleStartNewInvoice}
+                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            >
+                                <PlusIcon className="-ml-0.5 mr-2 h-5 w-5" />
+                                Registrar Nueva Factura de Venta
+                            </button>
+                        ) : (
+                            <button
+                                onClick={handleContactSupport}
+                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400"
+                            >
+                                <LifebuoyIcon className="-ml-0.5 mr-2 h-5 w-5" />
+                                Contacta a soporte para más licencias
+                            </button>
+                        )}
+                    </>
+                )}
+            </div>
+        );
     };
 
     const renderContent = () => {
@@ -177,7 +262,7 @@ const PaymentManagementPage = () => {
                             <h3 className="text-xl font-semibold mb-2">Error al cargar datos</h3>
                             <p className="text-base">{error}</p>
                             <button
-                                onClick={fetchPayments}
+                                onClick={fetchPlans}
                                 className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                             >
                                 Reintentar
@@ -187,19 +272,20 @@ const PaymentManagementPage = () => {
                 }
                 return (
                     <>
-                        <div className="flex justify-between items-center mb-6 border-b pb-4">
-                            <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-                                <span className="mr-2">💰</span> Gestión de Pagos
-                            </h1>
-                            <button
-                                onClick={handleStartNewInvoice}
-                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                            >
-                                <PlusIcon className="-ml-0.5 mr-2 h-5 w-5" />
-                                Registrar Nueva Factura de Venta
-                            </button>
-                        </div>
-                        <PaymentTable payments={payments} />
+                        {renderHeader()}
+                        <PaymentTable payments={plans} />
+                        {/* Mensaje condicional de licencias */}
+                        {realTokensAvailable <= 0 && (
+                            <div className="mt-8 p-6 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg shadow-md">
+                                <h3 className="text-xl font-bold mb-2">¡Atención: Licencias Agotadas! ⚠️</h3>
+                                <p className="text-lg">
+                                    Para registrar más ventas, por favor contacta a soporte de SmartPay.
+                                    {realTokensAvailable < 0 && (
+                                        <> Si tienes licencias en negativo, por favor ponte al día con tus pagos.</>
+                                    )}
+                                </p>
+                            </div>
+                        )}
                     </>
                 );
             case 1:
