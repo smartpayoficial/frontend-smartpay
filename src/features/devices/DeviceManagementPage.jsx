@@ -73,23 +73,29 @@ const DeviceManagementPage = () => {
     }
   }, []);
 
-  function mapPlansWithLatestAction(plans, actions) {
-    console.log("Plan", plans);
-    console.log("Actions", actions)
+    function mapPlansWithLatestAction(plans, actions) {
+        console.log("Plan", plans);
+        console.log("Actions", actions);
 
-    return plans.map((plan) => {
-      let relevant = actions.filter(
-        (a) =>
-          (a.television_id === plan.television_id) &&
-          (a.action === 'block' || a.action === 'unblock' || a.action === 'unenroll')
-      );
-      const latest = relevant.reduce((acc, cur) => {
-        return !acc || new Date(cur.created_at) > new Date(acc.created_at) ? cur : acc;
-      }, null);
+        return plans.map((plan) => {
+            // Elegir la clave a usar para emparejar acciones
+            const key = plan.television_id ?? plan.device_id;
+            const keyField = plan.television_id != null ? 'television_id' : 'device_id';
 
-      return { ...plan, status_actions: latest || null };
-    });
-  }
+            let relevant = actions.filter((a) =>
+                a[keyField] === key &&
+                (a.action === 'block' || a.action === 'unblock' || a.action === 'unenroll')
+            );
+
+            const latest = relevant.reduce((acc, cur) => {
+                return !acc || new Date(cur.created_at) > new Date(acc.created_at)
+                    ? cur
+                    : acc;
+            }, null);
+
+            return { ...plan, status_actions: latest || null };
+        });
+    }
 
   const fetchDevices = async () => {
     setLoading(true);

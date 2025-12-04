@@ -99,7 +99,9 @@ const DeviceTable = ({ devices = [], onViewDetails, columnFilters, onColumnFilte
                   <td className="px-6 py-4 whitespace-nowrap text-center">
                     <span className="p-2 w-9 inline-flex text-xs leading-5 font-semibold rounded-full">
                       {(() => {
+                          console.log("Device", device);
                         const action = device?.status_actions?.action?.toLowerCase();
+                        console.log("Action", action);
                         if (action === 'block') return <Lock className="text-red-600" />;
                         if (action === 'unenroll') return <BadgeCheck className="text-blue-600" />;
                         return <LockOpenIcon className="text-green-600" />;
