@@ -8,6 +8,23 @@ set STORE_ID="${storeIdValue}"
 set ENROLLMENT_CODE="${enrollmentCodeValue}"
 set APK_FILE="./smartpayTv.apk"  :: Asume que el APK está en la misma carpeta
 
+:: Solicitar IP del dispositivo
+set /p DEVICE_IP=Ingrese la IP del dispositivo (ej. 192.168.1.100): 
+
+echo Intentando conectar con el dispositivo %DEVICE_IP%:5555...
+adb connect %DEVICE_IP%:5555 >nul 2>&1
+
+:: Verificar si la conexión fue exitosa
+adb devices | findstr /c:"%DEVICE_IP%:5555" >nul
+if errorlevel 1 (
+    echo.
+    echo No se pudo conectar al dispositivo en %DEVICE_IP%:5555.
+    echo Verifique la IP y que ADB esté habilitado.
+    goto EndScript
+) else (
+    echo Conexión exitosa a %DEVICE_IP%:5555
+)
+
 echo Codigo de Enrolamiento: %ENROLLMENT_CODE%
 echo ---
 
@@ -43,10 +60,10 @@ FOR /F "tokens=1,2 skip=1" %%A IN ('adb devices') DO (
 
         echo !DEVICE_OWNER_LINE! | findstr /c:!PKG! >nul
         if errorlevel 1 (
-            echo Package !PKG! is not the device owner or no device owner is set. Fix the error and try again.
-            exit /b 1
+            echo Package !PKG! no es el device owner o no hay device owner configurado.
+            goto EndScript
         ) else (
-            echo Package !PKG! is the device owner.
+            echo Package !PKG! es el device owner.
         )
 
         echo %NL%* Otorgando Permisos *
@@ -66,9 +83,13 @@ FOR /F "tokens=1,2 skip=1" %%A IN ('adb devices') DO (
 )
 
 if %DEVICE_COUNT% == 0 (
-    echo No devices found.
+    echo No se encontraron dispositivos.
 )
 
+:EndScript
+echo.
+echo Presione cualquier tecla para salir...
+pause >nul
 ENDLOCAL`;
 
 export default createWindowsBatchScript;
