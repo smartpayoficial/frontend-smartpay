@@ -392,15 +392,16 @@ const Step2DeviceProvisioning = ({onNext, onBack, initialData = {}, onDataChange
                                 Generar nuevo enrolamiento
                             </button>
 
-                            <div className="flex justify-center space-x-4">
+                            {(!deviceType &&
+                                <div className="flex justify-center space-x-4">
 
-                                {/* Primer Botón Dropdown */}
-                                <PlatformDropdown text={"Descargar ADB"} onPlatformSelect={handleABD} />
+                                    {/* Primer Botón Dropdown */}
+                                    <PlatformDropdown text={"Descargar ADB"} onPlatformSelect={handleABD} />
 
-                                {/* Segundo Botón Dropdown */}
-                                <PlatformDropdown text={"Descargar .BAT"} onPlatformSelect={handleBat} />
-
-                            </div>
+                                    {/* Segundo Botón Dropdown */}
+                                    <PlatformDropdown text={"Descargar .BAT"} onPlatformSelect={handleBat} />
+                                </div>
+                            ) }
 
                         </div>
                     </div>
