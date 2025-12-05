@@ -48,12 +48,14 @@ const DeviceDetailsView = ({
     const dummyContractUrl = 'https://www.africau.edu/images/default/sample.pdf';
 
     useEffect(() => {
+        console.log("Plan", plan);
         if (plan.device) {
+            console.log("Plan", plan);
             const newFormData = {
                 name: plan.device.name || '',
                 description: plan.device.description || '',
                 imei: plan.value || '',
-                imei2: plan.device.imei2 || '',
+                imei_two: plan.device.imei_two || '',
                 serial_number: plan.device.serial_number || '',
                 model: plan.device.model || '',
                 brand: 'sdasdsadsdads',
@@ -297,7 +299,7 @@ const DeviceDetailsView = ({
     const generalInfoFields = [
         { key: 'product_name', label: 'Nombre' }, { key: 'serial_number', label: 'Serial' },
         { key: 'model', label: 'Modelo' }, { key: 'brand', label: 'Marca' },
-        { key: 'imei', label: 'IMEI 1' }, { key: 'imei2', label: 'IMEI 2' },
+        { key: 'imei', label: 'IMEI 1' }, { key: 'imei_two', label: 'IMEI 2' },
         { key: 'state', label: 'Estado' }, { key: 'price', label: 'Precio', type: 'number' },
         { key: 'purchase_date', label: 'Fecha de Compra', type: 'date' },
         { key: 'period', label: 'Periodo (días)', type: 'number' },
@@ -504,7 +506,7 @@ const DeviceDetailsView = ({
                                             setIsEditing(false);
                                             setFormData({
                                                 name: plan.device.name || '', description: plan.device.description || '',
-                                                imei: plan.device.imei || '', imei2: plan.device.imei2 || '',
+                                                imei: plan.device.imei || '', imei_two: plan.device.imei_two || '',
                                                 serial_number: plan.device.serial_number || '', model: plan.device.model || '',
                                                 brand: plan.device.brand || '', price: plan.device.price || 0,
                                                 purchase_date: plan.device.purchase_date ? plan.device.purchase_date.split('T')[0] : '',
