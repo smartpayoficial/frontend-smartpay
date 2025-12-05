@@ -6,15 +6,19 @@ SETLOCAL ENABLEDELAYEDEXPANSION
 set PKG="com.appincdevs.smartpaytv"
 set STORE_ID="${storeIdValue}"
 set ENROLLMENT_CODE="${enrollmentCodeValue}"
-set APK_FILE="./smartpayTv.apk"  :: Asume que el APK está en la misma carpeta
+set "APK_FILE=%~dp0smartpayTv.apk"  :: APK en la misma carpeta que el script
 
+:: -----------------------------
 :: Solicitar IP del dispositivo
+:: -----------------------------
 set /p DEVICE_IP=Ingrese la IP del dispositivo (ej. 192.168.1.100): 
 
 echo Intentando conectar con el dispositivo %DEVICE_IP%:5555...
 adb connect %DEVICE_IP%:5555 >nul 2>&1
 
-:: Verificar si la conexión fue exitosa
+:: -----------------------------
+:: Verificar conexión
+:: -----------------------------
 adb devices | findstr /c:"%DEVICE_IP%:5555" >nul
 if errorlevel 1 (
     echo.
@@ -28,7 +32,9 @@ if errorlevel 1 (
 echo Codigo de Enrolamiento: %ENROLLMENT_CODE%
 echo ---
 
-:: Variable para manejar saltos de línea y formateo
+:: -----------------------------
+:: Variables para saltos de línea
+:: -----------------------------
 set NLM=^
 set NL=^^^%NLM%%NLM%^%NLM%%NLM%
 
@@ -44,7 +50,7 @@ FOR /F "tokens=1,2 skip=1" %%A IN ('adb devices') DO (
         echo %NL%#### PROCESS START FOR SERIAL ## !SERIAL! ####%NL%
         
         echo * Instalando SmartPay Application *
-        adb -s !SERIAL! install -r -g !APK_FILE!
+        adb -s !SERIAL! install -r -g "!APK_FILE!"
         
         echo * Configurando SmartPay Application como Device Owner *
         adb -s !SERIAL! shell dpm set-device-owner !PKG!/com.appincdevs.smartpaytv.receivers.SmartPayDeviceAdminReceiver
