@@ -1,6 +1,6 @@
 // src/pages/payments/components/Step2DeviceProvisioning.jsx
 import React, {useState, useEffect, useCallback, useRef} from 'react';
-import {QrCodeIcon, WifiIcon, CheckCircleIcon, ArrowPathIcon, ClipboardIcon, CheckIcon, Bars3Icon, ComputerDesktopIcon, WindowIcon} from '@heroicons/react/24/outline';
+import {QrCodeIcon, WifiIcon, CheckCircleIcon, ArrowPathIcon, ClipboardIcon, CheckIcon} from '@heroicons/react/24/outline';
 import {ChevronLeftIcon, ChevronRightIcon} from '@heroicons/react/24/solid';
 import {toast} from 'react-toastify';
 import QRCode from 'react-qr-code';
@@ -13,6 +13,10 @@ import {
     getProvisioningJson,
 } from '../../../api/enrolments';
 import {useAuth} from "../../../common/context/AuthProvider.jsx";
+import PlatformDropdown from "../utils/PlatformDropdown.jsx";
+import downloadFile from "../utils/DownloadFile.jsx";
+import generateFile from "../utils/GenerateFile.jsx";
+import downloadFileFromUrl from "../utils/DownloadFileFromUrl.jsx";
 
 const Step2DeviceProvisioning = ({onNext, onBack, initialData = {}, onDataChange}) => {
     const [qrGenerated, setQrGenerated] = useState(false);
@@ -29,6 +33,7 @@ const Step2DeviceProvisioning = ({onNext, onBack, initialData = {}, onDataChange
 
     const deviceTypeRef = useRef(deviceType);
     const [isCopied, setIsCopied] = useState(false);
+    const user = useAuth().user;
 
     // 2. Función para copiar el ID
     const copyToClipboard = () => {
@@ -237,6 +242,30 @@ const Step2DeviceProvisioning = ({onNext, onBack, initialData = {}, onDataChange
         });
     };
 
+    const handleBat = (platform) => {
+        if (platform === 'Windows') {
+            const scriptContent = generateFile(currentEnrolmentId, user.store.id);
+            downloadFile(scriptContent, 'install_smartpay.bat', 'application/bat');
+        } else if (platform === 'Linux') {
+            console.log("Iniciando lógica para Linux...");
+            // Lógica para Linux...
+            // Por ejemplo: const linuxScriptContent = createLinuxScript(user.store.id);
+        }
+        // Puedes añadir más lógica si agregas más plataformas al dropdown
+    };
+
+    const handleABD = (platform) => {
+        if (platform === 'Windows') {
+            const ADB_ZIP_URL = "https://appincdevs.com/enterprise/television/windows/adb.zip";
+            downloadFileFromUrl(ADB_ZIP_URL, "adb.zip");
+        } else if (platform === 'Linux') {
+            console.log("Iniciando lógica para Linux...");
+            // Lógica para Linux...
+            // Por ejemplo: const linuxScriptContent = createLinuxScript(user.store.id);
+        }
+        // Puedes añadir más lógica si agregas más plataformas al dropdown
+    };
+
     console.log('Datos provis', deviceDetails);
 
     return (
@@ -355,11 +384,6 @@ const Step2DeviceProvisioning = ({onNext, onBack, initialData = {}, onDataChange
                             Esperando conexión...
                         </p>
                         <div className="flex flex-col items-center mt-4 space-y-4">
-
-                            {!deviceType && (
-                                <PlatformDropdown />
-                            )}
-
                             <button
                                 onClick={handleForceNewEnrolment}
                                 className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-orange-600 hover:bg-orange-700"
@@ -367,6 +391,17 @@ const Step2DeviceProvisioning = ({onNext, onBack, initialData = {}, onDataChange
                                 <ArrowPathIcon className="-ml-0.5 mr-2 h-5 w-5"/>
                                 Generar nuevo enrolamiento
                             </button>
+
+                            <div className="flex justify-center space-x-4">
+
+                                {/* Primer Botón Dropdown */}
+                                <PlatformDropdown text={"Descargar ADB"} onPlatformSelect={handleABD} />
+
+                                {/* Segundo Botón Dropdown */}
+                                <PlatformDropdown text={"Descargar .BAT"} onPlatformSelect={handleBat} />
+
+                            </div>
+
                         </div>
                     </div>
                 )}
@@ -433,182 +468,4 @@ const Step2DeviceProvisioning = ({onNext, onBack, initialData = {}, onDataChange
     );
 };
 
-// Componente del Menú Desplegable (Activado por Hover)
-function PlatformDropdown() {
-    const { user } = useAuth();
-
-    // Lógica al seleccionar una plataforma
-    const handlePlatformSelect = (platform) => {
-        if (platform === 'Windows') {
-            // 1. Generar el script usando la función y pasando el STORE_ID
-            const scriptContent = createWindowsBatchScript(user.store.id);
-
-            // 2. Descargar el archivo
-            downloadFile(
-                scriptContent,
-                'install_smartpay.bat', // Cambié el nombre del archivo
-                'application/bat'
-            );
-        } else {
-            // Lógica para Linux...
-            // Por ejemplo: const linuxScriptContent = createLinuxScript(TARGET_STORE_ID);
-        }
-    };
-
-    return (
-        // 1. Contenedor principal: Clase 'group' esencial para el hover
-        <div className="relative inline-block text-left group">
-
-            {/* Botón de Lista (Trigger) */}
-            <button
-                type="button"
-                className="inline-flex justify-center items-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-indigo-500"
-            >
-                <Bars3Icon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-                Descargar Archivos
-            </button>
-
-            {/* Menú Desplegable (Content) */}
-            <div
-                className="hidden group-hover:block origin-top-right absolute right-0 mt-0.5 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10"
-                role="menu"
-                aria-orientation="vertical"
-            >
-                <div className="py-1" role="none">
-                    {/* Opción Windows */}
-                    <button
-                        onClick={() => handlePlatformSelect('Windows')}
-                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 text-left"
-                        role="menuitem"
-                    >
-                        <WindowIcon className="h-5 w-5 mr-2 text-blue-500"/>
-                        Windows
-                    </button>
-
-                    {/* Opción Linux */}
-                    <button
-                        onClick={() => handlePlatformSelect('Linux')}
-                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 text-left"
-                        role="menuitem"
-                    >
-                        <ComputerDesktopIcon className="h-5 w-5 mr-2 text-gray-700"/>
-                        Linux
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// Define el script como una función que acepta el STORE_ID como argumento
-const createWindowsBatchScript = (storeIdValue) => `@echo off
-SETLOCAL ENABLEDELAYEDEXPANSION
-
-:: --- SOLICITAR CÓDIGO DE INSCRIPCIÓN ---
-echo Por favor, introduce el ENROLLMENT_CODE:
-set /p ENROLLMENT_CODE_INPUT=
-echo Usando ENROLLMENT_CODE: %ENROLLMENT_CODE_INPUT%
-echo ---
-
-:: Variable para manejar saltos de línea y formateo
-set NLM=^
-set NL=^^^%NLM%%NLM%^%NLM%%NLM%
-
-:: Establecer el STORE_ID inyectado desde React
-set PKG="com.appincdevs.smartpaytv"
-set STORE_ID="${storeIdValue}"
-set APK_FILE="./smartpayTv.apk"
-
-echo Buscando dispositivos...
-set DEVICE_COUNT=0
-
-:: Iterar sobre la salida de 'adb devices' (saltando la primera línea de encabezado)
-FOR /F "tokens=1,2 skip=1" %%A IN ('adb devices') DO (
-    SET IS_DEV=%%B
-    if "!IS_DEV!" == "device" (
-        SET SERIAL=%%A
-        set /a DEVICE_COUNT+=1
-        
-        echo %NL%#### PROCESS START FOR SERIAL ## !SERIAL! ####%NL%
-
-        echo * Installing SmartPay Application *
-        adb -s !SERIAL! install -r -g !APK_FILE!
-
-        echo * Setting up SmartPay Application as Device Owner *
-        adb -s !SERIAL! shell dpm set-device-owner !PKG!/com.appincdevs.smartpaytv.receivers.SmartPayDeviceAdminReceiver
-        
-        if errorlevel 1 (
-            echo Device owner command failed.
-        ) else (
-            echo Device owner command was successful.
-        )
-        
-        :: VERIFICACIÓN DEL DEVICE OWNER
-        for /f "tokens=*" %%i in ('adb -s !SERIAL! shell dumpsys device_policy ^| findstr /c:"package=" 2^>nul') do set DEVICE_OWNER_LINE=%%i
-
-        echo !DEVICE_OWNER_LINE! | findstr /c:!PKG! >nul
-        if errorlevel 1 (
-            echo Package !PKG! is not the device owner or no device owner is set. Fix the error and try again.
-            exit /b 1
-        ) else (
-            echo Package !PKG! is the device owner.
-        )
-
-        echo %NL%* Granting Permissions *
-        adb -s !SERIAL! shell appops set !PKG! WRITE_SETTINGS allow
-        adb -s !SERIAL! shell appops set !PKG! RUN_IN_BACKGROUND allow
-        adb -s !SERIAL! shell appops set !PKG! RUN_ANY_IN_BACKGROUND allow
-        adb -s !SERIAL! shell appops set !PKG! READ_DEVICE_IDENTIFIERS allow
-        adb -s !SERIAL! shell appops set !PKG! SYSTEM_ALERT_WINDOW allow
-        adb -s !SERIAL! shell dumpsys deviceidle whitelist +!PKG!
-        adb -s !SERIAL! shell appops set !PKG! REQUEST_INSTALL_PACKAGES allow
-        
-        echo %NL%* Starting Launcher Activity *
-        :: Usa %STORE_ID% para que se resuelva al valor inyectado
-        adb -s !SERIAL! shell am start -n !PKG!/com.appincdevs.smartpaytv.ui.views.policyCompliance.PolicyComplianceActivity --es "ENROLLMENT_ID" "%ENROLLMENT_CODE_INPUT%" --es "STORE_ID" "%STORE_ID%"
-
-        echo %NL%#### PROCESS END FOR SERIAL ## !SERIAL! #### %NL%
-    )
-)
-
-if %DEVICE_COUNT% == 0 (
-    echo No devices found.
-)
-
-ENDLOCAL`;
-
-/**
- * Genera un archivo en el navegador y fuerza su descarga.
- * * @param {string} content - El contenido del archivo (ej. el script .bat o .sh).
- * @param {string} filename - El nombre del archivo a descargar (ej. 'install.bat').
- * @param {string} type - El tipo MIME del contenido (ej. 'application/bat' o 'text/plain').
- */
-const downloadFile = (content, filename, type) => {
-    try {
-        // 1. Crear un Blob (objeto de archivo) a partir del contenido
-        const blob = new Blob([content], { type: type });
-
-        // 2. Crear una URL local temporal para el Blob
-        const url = URL.createObjectURL(blob);
-
-        // 3. Crear un elemento <a> invisible para simular la descarga
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename; // Establece el nombre del archivo
-
-        // 4. Simular el clic en el enlace para iniciar la descarga
-        document.body.appendChild(a);
-        a.click();
-
-        // 5. Limpiar: Eliminar el elemento <a> del DOM
-        document.body.removeChild(a);
-
-        // 6. Limpiar: Liberar el objeto URL temporal
-        URL.revokeObjectURL(url);
-
-    } catch (error) {
-        console.error("Error al intentar descargar el archivo:", error);
-        alert("Hubo un error al generar el archivo. Por favor, revisa la consola.");
-    }
-};
 export default Step2DeviceProvisioning;
