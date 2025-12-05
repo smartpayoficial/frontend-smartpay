@@ -37,6 +37,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     const superadminNavItems = [
         { name: 'Dashboard', icon: Squares2X2Icon, href: '/dashboard' },
         { name: 'Tiendas', icon: BuildingStorefrontIcon, href: '/store-management' },
+        { name: 'Gestión De Dispositivos', icon: DevicePhoneMobileIcon, href: '/devices-management' },
         { name: 'Administradores', icon: UsersIcon, href: '/user-management' },
         // { name: 'Gestión de Vendedores', icon: UserGroupIcon, href: '/vendors-management' },
         // { name: 'Gestión de Clientes', icon: UserGroupIcon, href: '/customers-management' },

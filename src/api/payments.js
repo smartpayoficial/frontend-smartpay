@@ -37,6 +37,7 @@ import axiosInstance from '../common/utils/interceptor-store';
  */
 export const createPayment = async (paymentData) => {
     try {
+        console.error("Payment", paymentData);
         // Según tu Swagger/OpenAPI, el endpoint para crear pagos es POST /api/v1/payments/payments
         const response = await axiosInstance.post('/payments/', paymentData);
         return response.data;

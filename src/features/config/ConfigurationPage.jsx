@@ -11,18 +11,21 @@ import ConfigurationModal from './components/ConfigurationModal';
 import BankContacts from './components/BankContacts';
 import { SettingsIcon } from 'lucide-react';
 import Swal from 'sweetalert2';
+const API_BASE_URL = import.meta.env.VITE_REACT_APP_API_BASE_URL + '/api/v1';
 
 function ConfigurationPage() {
     const CLIENT_ID = "631597337466-dt7qitq7tg2022rhje5ib5sk0eua6t79.apps.googleusercontent.com";
-    const REDIRECT_URI = "https://smartpay-oficial.com:9443/api/v1/google/auth/callback";
+    const REDIRECT_URI = `${API_BASE_URL}/google/auth/callback`;
     const SCOPE = "profile email https://www.googleapis.com/auth/userinfo.profile";
 
-    const [accounts, setAccounts] = useState([]);
-    const [configurations, setConfigurations] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [editingConfiguration, setEditingConfiguration] = useState(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    console.log("URL", REDIRECT_URI)
+
+  const [accounts, setAccounts] = useState([]);
+  const [configurations, setConfigurations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [editingConfiguration, setEditingConfiguration] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
     const [searchAccounts, setSearchAccounts] = useState('');
     const [searchConfig, setSearchConfig] = useState('');

@@ -4,7 +4,7 @@ import Swal from 'sweetalert2';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
 
-const NotifyModal = ({ isOpen, onClose, onSubmit, deviceId }) => {
+const NotifyModal = ({ isOpen, onClose, onSubmit, deviceId, isTelevision }) => {
     
     console.log("device", deviceId);
     const [formData, setFormData] = useState({
@@ -37,7 +37,7 @@ const NotifyModal = ({ isOpen, onClose, onSubmit, deviceId }) => {
         }
 
         const dataToSubmit = { ...formData };
-        onSubmit(deviceId, dataToSubmit);
+        onSubmit(deviceId, dataToSubmit, isTelevision);
         onClose();
     };
 

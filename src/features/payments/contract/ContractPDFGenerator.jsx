@@ -236,6 +236,8 @@ const ContractPDFGenerator = ({
 
   const totalPayableAmount = devicePrice;
 
+  console.log("Datos",equipment);
+  
   return (
     <div className="w-full max-w-4xl mx-auto p-4">
       <div className="mb-6 text-center">
@@ -478,7 +480,7 @@ const ContractPDFGenerator = ({
           <div className="grid grid-cols-3 gap-4">
             <p><strong>MARCA:</strong> {equipment.brand}</p>
             <p><strong>MODELO:</strong> {equipment.model}</p>
-            <p><strong>IMEI:</strong> {equipment.imei}</p>
+            <p><strong>{equipment.deviceId ? "IMEI:" : "SERIAL:"}</strong> {equipment.imei}</p>
           </div>
         </div>
 
