@@ -155,3 +155,10 @@ export const localDate = () => {
     const localDate = `${yyyy}-${mm}-${dd}`;
     return localDate;
 }
+
+/**
+ * Validar si es mobile 
+ */
+export const isMobile = () => {
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+};

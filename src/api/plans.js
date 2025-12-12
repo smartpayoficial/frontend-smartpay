@@ -154,7 +154,7 @@ export const downloadContract = async (planId) => {
         const response = await axiosInstance.get(`/plans/download-pdf/${planId}`, {
             responseType: 'blob',
         });
-        return response.data; //blob pdf
+          return new Blob([response.data], { type: "application/pdf" });
     } catch (error) {
         console.error(`Error al descargar contrato con ID ${planId}:`, error.response?.data || error.message);
         throw error;
