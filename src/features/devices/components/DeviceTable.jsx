@@ -3,6 +3,7 @@ import { PAGE_SIZE } from '../../../common/utils/const';
 import { TrashIcon, BadgeCheck, Lock, LockOpenIcon } from 'lucide-react';
 import AndroidIcon from '../../../assets/icons/android-icon.png';
 import TvIcon from '../../../assets/icons/television-icon.png';
+import { formatDisplayDate } from '../../../common/utils/helpers';
  
 const DeviceTable = ({ devices = [], onViewDetails, columnFilters, onColumnFilterChange, role, onDelete }) => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -50,6 +51,7 @@ const DeviceTable = ({ devices = [], onViewDetails, columnFilters, onColumnFilte
             {renderTh('model', 'Modelo')}
             {renderTh('brand', 'Marca')}
             {renderTh('imei', 'IMEI 1')}
+            {renderTh('next_payment_date', 'Próximo Pago')}
             <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
               Acciones
             </th>
@@ -123,6 +125,9 @@ const DeviceTable = ({ devices = [], onViewDetails, columnFilters, onColumnFilte
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {getImei(device) || 'N/A'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {formatDisplayDate(device.next_payment_date, false, false) || 'N/A'}
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

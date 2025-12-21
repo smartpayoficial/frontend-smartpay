@@ -128,12 +128,12 @@ const Step2DeviceProvisioning = ({onNext, onBack, initialData = {}, onDataChange
         if (simulateDummyDevice) {
             toast.info('Simulando aprovisionamiento de dispositivo dummy...');
             const timer = setTimeout(() => {
-                const dummyDeviceId = '40b42af7-10e5-4773-98e6-f8ef60342494';
+                const dummyDeviceId = '1257aedc-7c9f-4b08-8d13-ee8af8933c1c';
                 const dummyEnrolmentId = initialData.customer?.user_id ? `ENR-${initialData.customer.user_id.substring(0, 8)}-${Date.now()}` : `ENR-${uuidv4().substring(0, 8)}-${Date.now()}`;
 
                 const dummyDevice = {
                     device_id: dummyDeviceId,
-                    enrolment_id: dummyEnrolmentId,
+                    enrolment_id: '40fa287e-7135-411a-a8fb-89e449ec3d9b',
                     product_name: "SmartPOS T-800 Simulada",
                     brand: "OlimpoTech Sim.",
                     model: "T800-SP-PRO-Sim",

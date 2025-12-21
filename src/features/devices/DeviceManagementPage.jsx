@@ -23,6 +23,7 @@ import { getValueByPath } from '../../common/utils/helpers';
 import { useSearchParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { useAuth } from '../../common/context/AuthProvider';
+import { getEffectivePaymentDate } from './utils/helpers';
 
 const DeviceManagementPage = () => {
   const [devices, setDevices] = useState([]);
@@ -64,8 +65,6 @@ const DeviceManagementPage = () => {
       isDevice = false
     }
 
-    console.log("DeviceId", deviceId);
-    console.log("IsDevice", isDevice);
     if (deviceId) {
       handleViewDetails(isDevice, deviceId);
     } else {
@@ -73,29 +72,41 @@ const DeviceManagementPage = () => {
     }
   }, []);
 
-    function mapPlansWithLatestAction(plans, actions) {
-        console.log("Plan", plans);
-        console.log("Actions", actions);
+  function mapPlansWithLatestAction(plans, actions) {
+    return plans.map((plan) => {
+      // Elegir la clave a usar para emparejar acciones
+      const key = plan.television_id ?? plan.device_id;
+      const keyField = plan.television_id != null ? 'television_id' : 'device_id';
 
-        return plans.map((plan) => {
-            // Elegir la clave a usar para emparejar acciones
-            const key = plan.television_id ?? plan.device_id;
-            const keyField = plan.television_id != null ? 'television_id' : 'device_id';
+      let relevant = actions.filter((a) =>
+        a[keyField] === key &&
+        (a.action === 'block' || a.action === 'unblock' || a.action === 'unenroll')
+      );
 
-            let relevant = actions.filter((a) =>
-                a[keyField] === key &&
-                (a.action === 'block' || a.action === 'unblock' || a.action === 'unenroll')
-            );
+      // Calcular próximo pago
+      const latest = relevant.reduce((acc, cur) => {
+        return !acc || new Date(cur.created_at) > new Date(acc.created_at)
+          ? cur
+          : acc;
+      }, null);
 
-            const latest = relevant.reduce((acc, cur) => {
-                return !acc || new Date(cur.created_at) > new Date(acc.created_at)
-                    ? cur
-                    : acc;
-            }, null);
+      let nextPaymentDate = null;
+      if (plan.payments && plan.payments.length > 0 && plan.period) {
+        try {
+          nextPaymentDate = getEffectivePaymentDate(
+            plan.payments,
+            plan.initial_date,
+            plan.period
+          );
+        } catch (e) {
+          console.warn(`No se pudo calcular próximo pago para plan ${plan.plan_id}: ${e.message}`);
+        }
+      }
 
-            return { ...plan, status_actions: latest || null };
-        });
-    }
+
+      return { ...plan, status_actions: latest || null,  next_payment_date: nextPaymentDate };
+    });
+  }
 
   const fetchDevices = async () => {
     setLoading(true);
@@ -121,8 +132,8 @@ const DeviceManagementPage = () => {
       const lastLocationResp = await getLastLocation(isDevice, id);
 
       const params = isDevice
-            ? { device_id: id, state: 'Approved' }
-            : { television_id: id, state: 'Approved' };
+        ? { device_id: id, state: 'Approved' }
+        : { television_id: id, state: 'Approved' };
 
       const paymentsResponse = await getPayments(params);
       const actions = await getActionsHistory(isDevice, id);
@@ -258,7 +269,7 @@ const DeviceManagementPage = () => {
       await createPayment(paymentData);
       toast.success('Pago registrado.');
       if (selectPlan && ((!isTelevision && selectPlan.device_id === paymentData.device_id) || (selectPlan.television_id === paymentData.television_id))) {
-        const id = isTelevision ? paymentData.television_id : paymentData.device_id; 
+        const id = isTelevision ? paymentData.television_id : paymentData.device_id;
 
         const params = !isTelevision
           ? { device_id: id, state: 'Approved' }
