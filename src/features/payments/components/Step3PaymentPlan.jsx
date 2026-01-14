@@ -141,21 +141,37 @@ const Step3PaymentPlan = ({ onNext, onBack, initialData }) => {
         const freqDays = Number(paymentPlan.frecuencia_dias);
         const startDate = paymentPlan.initial_date;
 
-        if (numCuotas > 0 && freqDays > 0 && startDate && montoPorCuota > 0) {
-            const baseDate = new Date(startDate); // Usamos una fecha base para el cálculo
+        if (numCuotas > 0 && freqDays > 0 && startDate && balanceToFinance > 0) {
+            const baseDate = new Date(startDate);
+
+            // 1. Calcular valor base redondeado a 2 decimales
+            const rawQuota = balanceToFinance / numCuotas;
+            const quotaAmount = Math.round(rawQuota * 100) / 100;
+
+            // 2. Calcular cuánto suman esas cuotas redondeadas
+            // (Nota: multiplicamos por (numCuotas - 1) porque la última será diferente)
+            const totalCoveredByNormalQuotas = quotaAmount * (numCuotas - 1);
+
+            // 3. La última cuota asume el restante exacto para cuadrar el total
+            // Math.round para evitar errores de punto flotante tipo 0.00000001
+            const lastQuotaAmount = Math.round((balanceToFinance - totalCoveredByNormalQuotas) * 100) / 100;
+
             for (let i = 0; i < numCuotas; i++) {
                 const dueDate = new Date(baseDate);
                 dueDate.setDate(dueDate.getDate() + (i + 1) * freqDays);
 
+                // Si es la última cuota, usa el monto de ajuste, si no, el normal
+                const amount = (i === numCuotas - 1) ? lastQuotaAmount : quotaAmount;
+
                 installments.push({
                     number: i + 1,
                     dueDate: dueDate.toISOString().split('T')[0],
-                    amount: montoPorCuota
+                    amount: amount
                 });
             }
         }
         return installments;
-    }, [paymentPlan.quotas, paymentPlan.frecuencia_dias, paymentPlan.initial_date, montoPorCuota]);
+    }, [paymentPlan.quotas, paymentPlan.frecuencia_dias, paymentPlan.initial_date, balanceToFinance]);
 
     // Función de validación del formulario
     const validate = () => {

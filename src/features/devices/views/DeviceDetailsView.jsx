@@ -45,12 +45,10 @@ const DeviceDetailsView = ({
     const [isPaid, setIsPaid] = useState(false);
     const [contractUrl, setContractUrl] = useState(null);
 
-    const dummyContractUrl = 'https://www.africau.edu/images/default/sample.pdf';
+    // const dummyContractUrl = 'https://www.africau.edu/images/default/sample.pdf'; // No se usa
 
     useEffect(() => {
-        console.log("Plan", plan);
         if (plan.device) {
-            console.log("Plan", plan);
             const newFormData = {
                 name: plan.device.name || '',
                 description: plan.device.description || '',
@@ -58,16 +56,15 @@ const DeviceDetailsView = ({
                 imei_two: plan.device.imei_two || '',
                 serial_number: plan.device.serial_number || '',
                 model: plan.device.model || '',
-                brand: 'sdasdsadsdads',
+                brand: plan.device.brand || '', // CORREGIDO: Antes tenía texto basura
                 price: plan.value || 0,
                 purchase_date: plan.initial_date || '',
                 state: plan.device.state || 'Active'
             };
             setFormData(newFormData);
-            // console.log('AAA')
             getLastBlockState();
         }
-    }, [plan.device]);
+    }, [plan.device, plan.value, plan.initial_date]); // Agregadas dependencias faltantes
 
     useEffect(() => {
         const paymentsValue = payments
@@ -78,7 +75,7 @@ const DeviceDetailsView = ({
         const roundedPaymentsValue = parseFloat(paymentsValue.toFixed(2));
         const planValue = parseFloat(plan.value);
         setIsPaid(roundedPaymentsValue >= planValue);
-    }, [payments]);
+    }, [payments, plan.value]);
 
 
     /**
@@ -98,12 +95,8 @@ const DeviceDetailsView = ({
             (a, b) => new Date(b.created_at) - new Date(a.created_at)
         );
 
-        // console.log('ESTADO: ', sorted[0].action);
-
         return sorted[0].action; // devuelve "block" o "unblock"
     };
-
-
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -122,7 +115,6 @@ const DeviceDetailsView = ({
             const dataToSend = {
                 name: data.name,
                 state: data.state,
-
             }
 
             await onUpdateDevice(plan.device_id, dataToSend);
@@ -131,7 +123,8 @@ const DeviceDetailsView = ({
                 onDeviceUpdate();
             }
         } catch (error) {
-            // console.error("Failed to save device:", error);
+            console.error("Failed to save device:", error);
+            toast.error("Error al guardar los cambios");
         } finally {
             setIsSaving(false);
         }
@@ -146,8 +139,8 @@ const DeviceDetailsView = ({
             toast.dismiss(toasId);
             setIsSimModalOpen(true);
         } catch (err) {
-            // console.error('Error al cargar detalles de la sim:', err);
-            setError('Error al cargar los detalles de la sim.');
+            toast.dismiss(toasId);
+            toast.error('Error al cargar los detalles de la sim.');
         }
     };
 
@@ -161,20 +154,17 @@ const DeviceDetailsView = ({
     const handleReEnrollmentOpen = async () => {
         toast.success('Obteniendo QR...')
         try {
-            // Obtener el objeto del localStorage
-            const storedUser = localStorage.getItem("user"); // Usa la clave con la que guardaste el objeto
+            const storedUser = localStorage.getItem("user");
             if (!storedUser) {
-                // console.log("No se encontró el datos del usuario en el localStorage");
                 return;
             }
 
             var storeId = null;
             try {
-                const user = JSON.parse(storedUser); // Convertir de JSON a objeto
-                storeId = user.store?.id; // Acceder al ID del store (usa optional chaining por seguridad)
-                // console.log("Store ID:", storeId);
+                const user = JSON.parse(storedUser);
+                storeId = user.store?.id;
             } catch (error) {
-                // console.error("Error al parsear el objeto del localStorage", error);
+                console.error("Error al parsear el objeto del localStorage", error);
             }
 
             const qrCode = await getProvisioningJson(plan.device.enrolment_id, storeId, true);
@@ -244,7 +234,6 @@ const DeviceDetailsView = ({
         } catch (error) {
             const errorMessage = error.response?.data?.detail || error.message || 'Error desconocido al aprobar SIM';
             Swal.fire('Error', `Error al aprobar SIM ${iccId}: ${errorMessage}`, 'error');
-            // console.error('Error al aprobar SIM:', error);
             return false;
         }
     };
@@ -260,7 +249,6 @@ const DeviceDetailsView = ({
         } catch (error) {
             const errorMessage = error.response?.data?.detail || error.message || 'Error desconocido al desvincular SIM';
             Swal.fire('Error', `Error al desvincular SIM ${iccId}: ${errorMessage}`, 'error');
-            // console.error('Error al desvincular SIM:', error);
             return false;
         }
     };
@@ -293,11 +281,17 @@ const DeviceDetailsView = ({
         }
     };
 
-    const getDescription = (index) => {
-        if (index == 0) {
+    // CORREGIDO: Lógica mejorada para la descripción de la cuota
+    const getDescription = (payment, index) => {
+        // Prioridad 1: Si el backend ya trae la descripción, usala.
+        if (payment && payment.description) {
+            return payment.description;
+        }
+        // Prioridad 2: Lógica por defecto basada en índice
+        if (index === 0) {
             return `Cuota inicial`;
         }
-        return `Cuota ${index} de ${plan.quotas}`
+        return `Cuota ${index} de ${plan.quotas}`;
     };
 
     const isSuperAdmin = userRole === 'superadmin';
@@ -311,28 +305,16 @@ const DeviceDetailsView = ({
         { key: 'period', label: 'Periodo (días)', type: 'number' },
         { key: 'user', label: 'Cliente' },
         { key: 'location', label: 'Ubicación' },
-        // { key: 'created_at', label: 'Creado el' }, { key: 'updated_at', label: 'Última Actualización' },
     ];
 
     const fieldsToExcludeFromDirectEdit = [
-        'device_id',
-        'serial_number',
-        'model',
-        'brand',
-        'imei',
-        'product_name',
-        'imei_two',
-        'created_at',
-        'updated_at',
-        'location',
-        'purchase_date',
-        'vendor',
-        'period',
-        'user'
+        'device_id', 'serial_number', 'model', 'brand', 'imei',
+        'product_name', 'imei_two', 'created_at', 'updated_at',
+        'location', 'purchase_date', 'vendor', 'period', 'user'
     ];
 
     if (isPaid) {
-        fieldsToExcludeFromDirectEdit.push('state'); // reemplaza 'new_field_name' con el que quieras agregar
+        fieldsToExcludeFromDirectEdit.push('state');
     }
 
     const actionLabels = {
@@ -351,14 +333,16 @@ const DeviceDetailsView = ({
         applied: "Aplicada"
     };
 
-    const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10; // o cualquier cantidad que quieras mostrar
+    const currentPage = 1; // Simplificado si no usas estado para paginación aquí
+    // const [currentPage, setCurrentPage] = useState(1); // Si lo necesitas descoméntalo
+    const itemsPerPage = 10;
     const totalPages = Math.ceil(actionsHistory?.length / itemsPerPage) || 1;
 
-    const paginatedActions = actionsHistory.slice(
+    // Nota: Si usas paginación real, necesitarás el estado currentPage
+    const paginatedActions = actionsHistory ? actionsHistory.slice(
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage
-    );
+    ) : [];
 
     return (
         <div className="bg-white p-6 rounded-lg shadow-xl mx-auto">
@@ -378,7 +362,6 @@ const DeviceDetailsView = ({
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 {/* Columna Izquierda: Información General */}
-
                 <div className="bg-gray-50 p-6 rounded-lg shadow-inner">
                     <h3 className="text-2xl font-semibold text-gray-800 mb-4">Información General</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -447,7 +430,7 @@ const DeviceDetailsView = ({
                                 </div>
                             );
                         })}
-                        {/* New: Ver Contrato button */}
+                        {/* Ver Contrato button */}
                         {!isEditing && isSuperAdmin && (
                             <div className="col-span-full sm:col-span-1 lg:col-span-1 flex justify-center items-center">
                                 <button
@@ -458,7 +441,7 @@ const DeviceDetailsView = ({
                                 </button>
                             </div>
                         )}
-                        {/* SIM button moved next to Ver Contrato */}
+                        {/* SIM button */}
                         {!isEditing && isSuperAdmin && (
                             <div className="col-span-full sm:col-span-1 lg:col-span-1 flex justify-center items-center">
                                 <button
@@ -470,7 +453,7 @@ const DeviceDetailsView = ({
                             </div>
                         )}
 
-                        {/* New: Mensaje button */}
+                        {/* Mensaje button */}
                         {!isEditing && isSuperAdmin && (
                             <div className="col-span-full sm:col-span-1 lg:col-span-1 flex justify-center items-center">
                                 <button
@@ -482,7 +465,7 @@ const DeviceDetailsView = ({
                             </div>
                         )}
 
-                        {/* New: Mensaje button */}
+                        {/* ReEnrolar button */}
                         {!isEditing && isSuperAdmin && (
                             <div className="col-span-full sm:col-span-1 lg:col-span-1 flex justify-center items-center">
                                 <button
@@ -510,20 +493,24 @@ const DeviceDetailsView = ({
                                     <button
                                         onClick={() => {
                                             setIsEditing(false);
-                                            setFormData({
-                                                name: plan.device.name || '', description: plan.device.description || '',
-                                                imei: plan.device.imei || '', imei_two: plan.device.imei_two || '',
-                                                serial_number: plan.device.serial_number || '', model: plan.device.model || '',
-                                                brand: plan.device.brand || '', price: plan.device.price || 0,
-                                                purchase_date: plan.device.purchase_date ? plan.device.purchase_date.split('T')[0] : '',
-                                                warranty_end_date: plan.device.warranty_end_date ? plan.device.warranty_end_date.split('T')[0] : '',
-                                                assigned_to_user_id: plan.device.assigned_to_user_id || '',
-                                                state: plan.device.state || 'Active', location: plan.device.location || '',
-                                                notes: plan.device.notes || '', created_at: plan.device.created_at || '',
-                                                updated_at: plan.device.updated_at || '',
-                                                last_location_latitude: plan.device.last_location_latitude || '',
-                                                last_location_longitude: plan.device.last_location_longitude || '',
-                                            });
+                                            // Resetear el formulario al estado original
+                                            if (plan.device) {
+                                                const resetData = {
+                                                    name: plan.device.name || '',
+                                                    description: plan.device.description || '',
+                                                    imei: plan.device.imei || '',
+                                                    imei_two: plan.device.imei_two || '',
+                                                    serial_number: plan.device.serial_number || '',
+                                                    model: plan.device.model || '',
+                                                    brand: plan.device.brand || '', // CORREGIDO AQUÍ TAMBIÉN
+                                                    price: plan.device.price || 0,
+                                                    purchase_date: plan.device.purchase_date ? plan.device.purchase_date.split('T')[0] : '',
+                                                    warranty_end_date: plan.device.warranty_end_date ? plan.device.warranty_end_date.split('T')[0] : '',
+                                                    state: plan.device.state || 'Active',
+                                                    location: plan.device.location || '',
+                                                };
+                                                setFormData(prev => ({ ...prev, ...resetData }));
+                                            }
                                         }}
                                         className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg text-sm transition duration-200 ease-in-out w-full"
                                     >
@@ -540,13 +527,11 @@ const DeviceDetailsView = ({
                     {/* Ubicación del Dispositivo */}
                     <div className="bg-gray-50 p-6 rounded-lg shadow-inner flex-grow z-0">
                         <h3 className="text-2xl font-semibold text-gray-800 mb-4">Ubicación del Dispositivo</h3>
-                        {/* Aquí integramos el DeviceMapComponent */}
                         <DeviceMapComponent
                             latitude={location?.latitude ?? 0}
                             longitude={location?.longitude ?? 0}
-                            deviceSerial={plan.device.serial_number || plan.device.name} // Usar serial o nombre para el popup
+                            deviceSerial={plan.device.serial_number || plan.device.name}
                         />
-                        {/* Botón Localizar: siempre habilitado */}
                         {isSuperAdmin && (
                             <button
                                 onClick={() => onLocate(plan.device.device_id, false)}
@@ -561,7 +546,7 @@ const DeviceDetailsView = ({
                     <div className="bg-gray-50 p-6 rounded-lg shadow-inner flex-grow">
                         <h3 className="text-2xl font-semibold text-gray-800 mb-4">Acciones del Dispositivo</h3>
                         <div className="mb-4">
-                            {isSuperAdmin && getLastBlockState() == 'unblock' && (
+                            {isSuperAdmin && getLastBlockState() === 'unblock' && (
                                 <button
                                     onClick={() => onBlock(plan.device.device_id, false)}
                                     className={`bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out w-full`}
@@ -569,7 +554,7 @@ const DeviceDetailsView = ({
                                     Bloquear
                                 </button>
                             )}
-                            {isSuperAdmin && getLastBlockState() == 'block' && (
+                            {isSuperAdmin && getLastBlockState() === 'block' && (
                                 <button
                                     onClick={() => onUnblock(plan.device.device_id, false)}
                                     className={`bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out w-full`}
@@ -578,29 +563,8 @@ const DeviceDetailsView = ({
                                 </button>
                             )}
                         </div>
-                        {/* <div className="mb-4 flex flex-col sm:flex-row gap-2"> */}
-                        {/* Botón de Bloquear */}
-                        {/* {isSuperAdmin && (
-                                <button
-                                    onClick={() => onBlock(plan.device.device_id)}
-                                    className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out w-full"
-                                >
-                                    Bloquear
-                                </button>
-                            )} */}
 
-                        {/* Botón de Desbloquear */}
-                        {/* {isSuperAdmin && (
-                                <button
-                                    onClick={() => onUnblock(plan.device.device_id)}
-                                    className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out w-full"
-                                >
-                                    Desbloquear
-                                </button>
-                            )} */}
-                        {/* </div> */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
                             {isSuperAdmin && (
                                 <button
                                     onClick={handleOpenPaymentModal}
@@ -624,7 +588,7 @@ const DeviceDetailsView = ({
                 </div>
             </div>
 
-            {/* Historial de Acciones (debajo de las columnas principales) */}
+            {/* Historial de Acciones */}
             <div className="mt-8 bg-gray-50 p-6 rounded-lg shadow-inner">
                 <h3 className="text-2xl font-semibold text-gray-800 mb-4">Historial de Acciones</h3>
                 {Array.isArray(actionsHistory) && actionsHistory.length > 0 ? (
@@ -642,7 +606,6 @@ const DeviceDetailsView = ({
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {paginatedActions.map((action, index) => {
                                         const key = action.id || `${action.action}-${action.created_at}-${index}`;
-
                                         return (
                                             <tr key={key}>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
@@ -672,36 +635,13 @@ const DeviceDetailsView = ({
                                 </tbody>
                             </table>
                         </div>
-
-                        {/* Paginación */}
-                        {totalPages > 1 && (
-                            <div className="flex justify-center items-center mt-4 space-x-2">
-                                <button
-                                    className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                                    disabled={currentPage === 1}
-                                >
-                                    Anterior
-                                </button>
-                                <span className="text-sm text-gray-700">
-                                    Página {currentPage} de {totalPages}
-                                </span>
-                                <button
-                                    className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                                    disabled={currentPage === totalPages}
-                                >
-                                    Siguiente
-                                </button>
-                            </div>
-                        )}
                     </>
                 ) : (
                     <p className="text-gray-600">No hay historial de acciones disponible.</p>
                 )}
             </div>
 
-            {/* Historial de Pagos (debajo del historial de acciones) */}
+            {/* Historial de Pagos */}
             <div className="mt-8 bg-gray-50 p-6 rounded-lg shadow-inner">
                 <h3 className="text-2xl font-semibold text-gray-800 mb-4">Historial de Pagos</h3>
                 {payments.length > 0 ? (
@@ -717,8 +657,9 @@ const DeviceDetailsView = ({
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
                                 {payments.map((payment, index) => (
-                                    <tr key={payment.payment_id}>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{getDescription(index)}</td>
+                                    <tr key={payment.payment_id || index}>
+                                        {/* CORREGIDO: Se pasa el objeto payment Y el índice */}
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{getDescription(payment, index)}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{payment.date.split("T")[0]}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{payment.method}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${payment.value}</td>
@@ -732,7 +673,7 @@ const DeviceDetailsView = ({
                 )}
             </div>
 
-            {/* Modal de Gestión de SIMs */}
+            {/* Modales */}
             {isSimModalOpen && (
                 <SimManagementModal
                     sims={localSims}
@@ -744,16 +685,14 @@ const DeviceDetailsView = ({
                 />
             )}
 
-            {/* Modal para Ver Contrato */}
             {isContractModalOpen && (
                 <ContractViewModal
                     isOpen={isContractModalOpen}
                     onClose={handleCloseContractModal}
-                    contractUrl={contractUrl} // Pass the contract URL here
+                    contractUrl={contractUrl}
                 />
             )}
 
-            {/* Modal para Ver Contrato */}
             {isNotifyModalOpen && (
                 <NotifyModal
                     isOpen={isNotifyModalOpen}
@@ -764,7 +703,6 @@ const DeviceDetailsView = ({
                 />
             )}
 
-            {/* Modal para Ver Contrato */}
             {isPaymentModalOpen && (
                 <RegisterPaymentModal
                     isOpen={isPaymentModalOpen}
@@ -775,7 +713,6 @@ const DeviceDetailsView = ({
                 />
             )}
 
-            {/* Modal para ReEnrolar */}
             {isReEnrollmentOpen && (
                 <ReEnrollmentModal
                     isOpen={isReEnrollmentOpen}

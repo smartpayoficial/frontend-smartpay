@@ -5,32 +5,39 @@
  * @perdioDays Periodo de Dias de pago
  */
 export function getEffectivePaymentDate(payments, startDateStr, periodDays) {
-    console.log(payments, startDateStr, periodDays);
-    const paidDates = new Set(
-        payments
-            .filter(p => p.state === 'Approved')
-            .map(p => new Date(p.date).toISOString().split('T')[0])
-    );
+    console.log("Calculando fecha efectiva...", { payments, startDateStr, periodDays });
 
+    // 1. Filtrar los pagos: Solo Aprobados Y que NO sean la "Cuota inicial"
+    const periodicPayments = payments.filter(p => {
+        // Verificar estado
+        if (p.state !== 'Approved') return false;
+
+        // Verificar descripción (para ignorar la cuota inicial)
+        // Usamos optional chaining (?.) por seguridad y toLowerCase para evitar errores de mayúsculas
+        const description = p.description?.toLowerCase() || '';
+
+        // Si la descripción contiene "inicial", NO lo contamos
+        return !description.includes('inicial');
+    });
+
+    // 2. Contar cuántos pagos de cuotas REALES (periódicas) existen
+    const approvedPaymentsCount = periodicPayments.length;
+
+    // 3. Calcular días a sumar
+    // Lógica: Si la startDate es el 29 Dic (Cuota 1) y hay 1 pago (Cuota 1),
+    // sumamos 1 periodo (9 días) para obtener la fecha de la Cuota 2.
+    const daysToAdd = approvedPaymentsCount * periodDays;
+
+    // 4. Calcular la nueva fecha
+    // Nota: Usamos la fecha tal cual viene en string para evitar conversiones raras de zona horaria
     const startDate = new Date(startDateStr);
-    let currentDate = new Date(startDate);
 
-    currentDate.setDate(currentDate.getDate() + periodDays);
+    // Creamos una copia para manipular
+    const effectiveDate = new Date(startDate);
 
-    const today = new Date();
-    const maxDate = new Date(today);
-    maxDate.setDate(maxDate.getDate() + periodDays);
+    // Sumamos los días usando UTC para evitar problemas de horario de verano/cambio de hora
+    effectiveDate.setUTCDate(startDate.getUTCDate() + daysToAdd);
 
-    while (currentDate <= maxDate) {
-        const dateStr = currentDate.toISOString().split('T')[0];
-
-        if (!paidDates.has(dateStr)) {
-            return dateStr;
-        }
-
-        currentDate.setDate(currentDate.getDate() + periodDays);
-    }
-
-    // throw new Error("No se encontró una fecha válida en el rango esperado.");
-    console.error("No se encontró una fecha válida en el rango esperado.", "Current Date: ", currentDate, "maxDate: ", maxDate);
+    // 5. Retornar en formato YYYY-MM-DD
+    return effectiveDate.toISOString().split('T')[0];
 }

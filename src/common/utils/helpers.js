@@ -160,5 +160,5 @@ export const localDate = () => {
  * Validar si es mobile 
  */
 export const isMobile = () => {
-  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 };
