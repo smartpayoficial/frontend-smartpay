@@ -9,7 +9,7 @@ import Swal from 'sweetalert2';
 import { approveDeviceSim, removeDeviceSim, getSims } from '../../../api/devices';
 import NotifyModal from '../components/NotifyModal';
 import { downloadContract } from '../../../api/plans';
-import { formatDisplayDate } from '../../../common/utils/helpers';
+import { formatDisplayDate, isMobile } from '../../../common/utils/helpers';
 import ReEnrollmentModal from '../components/ReEnrollmentModal';
 
 import { getProvisioningJson } from '../../../api/enrolments';
@@ -48,12 +48,14 @@ const DeviceDetailsView = ({
     const dummyContractUrl = 'https://www.africau.edu/images/default/sample.pdf';
 
     useEffect(() => {
+        console.log("Plan", plan);
         if (plan.device) {
+            console.log("Plan", plan);
             const newFormData = {
                 name: plan.device.name || '',
                 description: plan.device.description || '',
                 imei: plan.value || '',
-                imei2: plan.device.imei2 || '',
+                imei_two: plan.device.imei_two || '',
                 serial_number: plan.device.serial_number || '',
                 model: plan.device.model || '',
                 brand: 'sdasdsadsdads',
@@ -66,7 +68,7 @@ const DeviceDetailsView = ({
             getLastBlockState();
         }
     }, [plan.device]);
-    
+
     useEffect(() => {
         const paymentsValue = payments
             .filter(payment => payment.state === 'Approved')
@@ -156,16 +158,16 @@ const DeviceDetailsView = ({
         }
     };
 
-     const handleReEnrollmentOpen = async () => {
+    const handleReEnrollmentOpen = async () => {
         toast.success('Obteniendo QR...')
         try {
             // Obtener el objeto del localStorage
             const storedUser = localStorage.getItem("user"); // Usa la clave con la que guardaste el objeto
             if (!storedUser) {
                 // console.log("No se encontró el datos del usuario en el localStorage");
-                return;  
+                return;
             }
-            
+
             var storeId = null;
             try {
                 const user = JSON.parse(storedUser); // Convertir de JSON a objeto
@@ -177,7 +179,7 @@ const DeviceDetailsView = ({
 
             const qrCode = await getProvisioningJson(plan.device.enrolment_id, storeId, true);
             setQrCode(qrCode);
-            setIsReEnrollmentOpen(true);   
+            setIsReEnrollmentOpen(true);
         } catch (error) {
             toast.error('Error cargando Qr...')
         }
@@ -195,6 +197,12 @@ const DeviceDetailsView = ({
         try {
             const blob = await downloadContract(plan.plan_id);
             const blobUrl = URL.createObjectURL(blob);
+
+            if (isMobile()) {
+                window.open(blobUrl, "_blank");
+                return;
+            }
+
             setContractUrl(blobUrl);
             setIsContractModalOpen(true);
         } catch (error) {
@@ -297,7 +305,7 @@ const DeviceDetailsView = ({
     const generalInfoFields = [
         { key: 'product_name', label: 'Nombre' }, { key: 'serial_number', label: 'Serial' },
         { key: 'model', label: 'Modelo' }, { key: 'brand', label: 'Marca' },
-        { key: 'imei', label: 'IMEI 1' }, { key: 'imei2', label: 'IMEI 2' },
+        { key: 'imei', label: 'IMEI 1' }, { key: 'imei_two', label: 'IMEI 2' },
         { key: 'state', label: 'Estado' }, { key: 'price', label: 'Precio', type: 'number' },
         { key: 'purchase_date', label: 'Fecha de Compra', type: 'date' },
         { key: 'period', label: 'Periodo (días)', type: 'number' },
@@ -370,6 +378,7 @@ const DeviceDetailsView = ({
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 {/* Columna Izquierda: Información General */}
+
                 <div className="bg-gray-50 p-6 rounded-lg shadow-inner">
                     <h3 className="text-2xl font-semibold text-gray-800 mb-4">Información General</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -503,7 +512,7 @@ const DeviceDetailsView = ({
                                             setIsEditing(false);
                                             setFormData({
                                                 name: plan.device.name || '', description: plan.device.description || '',
-                                                imei: plan.device.imei || '', imei2: plan.device.imei2 || '',
+                                                imei: plan.device.imei || '', imei_two: plan.device.imei_two || '',
                                                 serial_number: plan.device.serial_number || '', model: plan.device.model || '',
                                                 brand: plan.device.brand || '', price: plan.device.price || 0,
                                                 purchase_date: plan.device.purchase_date ? plan.device.purchase_date.split('T')[0] : '',
@@ -540,7 +549,7 @@ const DeviceDetailsView = ({
                         {/* Botón Localizar: siempre habilitado */}
                         {isSuperAdmin && (
                             <button
-                                onClick={() => onLocate(plan.device.device_id)}
+                                onClick={() => onLocate(plan.device.device_id, false)}
                                 className={`mt-4 bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out w-full ${isPolling ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
                                 Notificar Ubicación
@@ -554,7 +563,7 @@ const DeviceDetailsView = ({
                         <div className="mb-4">
                             {isSuperAdmin && getLastBlockState() == 'unblock' && (
                                 <button
-                                    onClick={() => onBlock(plan.device.device_id)}
+                                    onClick={() => onBlock(plan.device.device_id, false)}
                                     className={`bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out w-full`}
                                 >
                                     Bloquear
@@ -562,7 +571,7 @@ const DeviceDetailsView = ({
                             )}
                             {isSuperAdmin && getLastBlockState() == 'block' && (
                                 <button
-                                    onClick={() => onUnblock(plan.device.device_id)}
+                                    onClick={() => onUnblock(plan.device.device_id, false)}
                                     className={`bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out w-full`}
                                 >
                                     Desbloquear
@@ -570,8 +579,8 @@ const DeviceDetailsView = ({
                             )}
                         </div>
                         {/* <div className="mb-4 flex flex-col sm:flex-row gap-2"> */}
-                            {/* Botón de Bloquear */}
-                            {/* {isSuperAdmin && (
+                        {/* Botón de Bloquear */}
+                        {/* {isSuperAdmin && (
                                 <button
                                     onClick={() => onBlock(plan.device.device_id)}
                                     className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out w-full"
@@ -580,8 +589,8 @@ const DeviceDetailsView = ({
                                 </button>
                             )} */}
 
-                            {/* Botón de Desbloquear */}
-                            {/* {isSuperAdmin && (
+                        {/* Botón de Desbloquear */}
+                        {/* {isSuperAdmin && (
                                 <button
                                     onClick={() => onUnblock(plan.device.device_id)}
                                     className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out w-full"
@@ -751,6 +760,7 @@ const DeviceDetailsView = ({
                     onClose={handleCloseNotifyModal}
                     onSubmit={onNotification}
                     deviceId={plan.device_id}
+                    isTelevision={false}
                 />
             )}
 
@@ -765,7 +775,7 @@ const DeviceDetailsView = ({
                 />
             )}
 
-             {/* Modal para ReEnrolar */}
+            {/* Modal para ReEnrolar */}
             {isReEnrollmentOpen && (
                 <ReEnrollmentModal
                     isOpen={isReEnrollmentOpen}

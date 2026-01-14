@@ -29,6 +29,7 @@ const ResetPassword = lazy(() => import('../features/auth/ResetPassword'));
 // Rutas Generales / Dashboard
 
 const LandingPage = lazy(() => import('../common/pages/LandingPage'));
+const PoliticsPrivacity = lazy(() => import('../common/pages/PoliticsPrivacity'));
 
 const DashboardPage = lazy(() => import('../features/dashboard/Dashboard'));
 
@@ -100,6 +101,7 @@ const AppRoutes = () => {
                         {/* Rutas Públicas */}
 
                         <Route path="/landing" element={<LandingPage />} />
+                        <Route path="/politicas-privacidad" element={<PoliticsPrivacity />} />
 
                         <Route path="/login" element={<LoginPage />} />
 
@@ -121,13 +123,13 @@ const AppRoutes = () => {
                             
                             <Route element={<PrivateRoute allowedRoles={['Superadmin','Store Admin']} />}>
                                 <Route path="dashboard" element={<DashboardPage />} />
+                                <Route path="devices-management" element={<DeviceManagementPage />} />
 
                             </Route>
 
                             {/* Dashboard: solo para Superadmin y Store Admin */}
                             <Route element={<PrivateRoute allowedRoles={['Store Admin']} />}>
                                 <Route path="vendors-management" element={<VendorManagementPage />} />
-                                <Route path="devices-management" element={<DeviceManagementPage />} />
                                 <Route path="reports" element={<ReportsPage />} />
                                 <Route path="configuration" element={<ConfigurationPage />} />
                             </Route>

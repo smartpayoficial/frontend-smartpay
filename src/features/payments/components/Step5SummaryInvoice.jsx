@@ -15,6 +15,8 @@ const Step5SummaryInvoice = ({ onBack, onFinalize, initialData }) => {
         onFinalize(initialData);
     };
 
+
+    console.log('Datos iniciales paso 5:', device);
     return (
         <div className="space-y-6">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">Paso 5: Resumen y Factura</h2>
@@ -33,8 +35,14 @@ const Step5SummaryInvoice = ({ onBack, onFinalize, initialData }) => {
                     </div>
                     {/* Detalles del Dispositivo */}
                     <div>
-                        <p><span className="font-medium">Dispositivo:</span> {device ? `${device.brand} ${device.model} (${device.name})` : 'N/A'}</p>
-                        <p><span className="font-medium">IMEI:</span> {device ? device.imei : 'N/A'}</p>
+                        <p><span className="font-medium">{device.device_id ? "Dispositivo:" : "Televisor:"}</span> {
+                            device?.device_id ? `${device.brand} ${device.model} (${device.name})` : 
+                            device?.television_id ? `${device.brand} ${device.model} (${device.name})` : 'N/A'
+                        }</p>
+                        <p><span className="font-medium">{device.device_id ? "IMEI:" : "Marca:"}</span> {
+                            device?.device_id ? device.imei : 
+                            device?.television_id ? device.brand : 'N/A'}
+                        </p>
                         <p><span className="font-medium">Número de Serie:</span> {device ? device.serial_number : 'N/A'}</p>
                         <p><span className="font-medium">Valor Dispositivo:</span> ${device ? device.price_usd?.toLocaleString('es-CO') : '0,00'} COP</p>
                     </div>

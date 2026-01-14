@@ -4,6 +4,7 @@ import { getCurrentStore } from '../../../common/utils/helpers';
 
 import EntityManager from './shared/EntityManger';
 import ContactModal from './ContactModal';
+import { getUserMe } from '../../../api/auth';
 
 function BankContacts() {
   const store = getCurrentStore();
@@ -16,6 +17,7 @@ function BankContacts() {
   // ---------------- fetchers ----------------
   const fetcherAccounts = useCallback(async () => {
     const all = await getContacts();
+    await getUserMe(); 
     return all.filter(item =>
       ["BANK_ACCOUNT", "MOBILE_PAYMENT", "PAYMENT_GATEWAY"].includes(item.account_type?.category)
     );

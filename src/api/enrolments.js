@@ -61,6 +61,32 @@ export const getDeviceByEnrolmentId = async (enrollmentId) => {
     }
 };
 
+export const getTelevisorByEnrolmentId = async (enrollmentId) => {
+    try {
+        const params = { enrollment_id: enrollmentId };
+
+        const response = await axiosInstance.get('/televisions/', { params });
+        const data = response.data;
+        console.log("response", data);
+         // Verifica si es una lista y si tiene elementos
+        if (Array.isArray(data) && data.length > 0) {
+            return data[0]; 
+        } else {
+            return null;
+        }
+    } catch (error) {
+        
+        if (error.response && error.response.status === 404) {
+            // console.warn(`Enrolamiento ${enrolmentId} no encontrado (esperado durante polling).`);
+            // No hacemos nada, la excepción se propaga silenciosamente para un 404 esperado
+        } else {
+            console.error(`Error al obtener enrolamiento con ID ${enrollmentId}:`, error.response?.data || error.message);
+
+        }
+        throw error;
+    }
+};
+
 export const getProvisioningJson = async (enrollmentId, storeId, reEnrollment) => {
     try {
         const params = { 

@@ -26,6 +26,7 @@ const PaymentManagementPage = () => {
     const [devicesUsed, setDevicesUsed] = useState(0);
     const [loadingLicenses, setLoadingLicenses] = useState(true);
     const [isSaleInProgress, setIsSaleInProgress] = useState(false);
+    const [initLoading, setInitLoading] = useState(true);
 
     const fetchPayments = useCallback(async () => {
         setLoading(true);
@@ -51,6 +52,8 @@ const PaymentManagementPage = () => {
         try {
               const plans = await getPlans();
             setPlans(plans);
+            // Dispositivos usados segun cantidad de planes (evita carrera con fetchLicenses)
+            setDevicesUsed(Array.isArray(plans) ? plans.length : 0);
         } catch (err) {
             console.error('Error al cargar pagos:', err);
             setError('No se pudieron cargar los pagos. Inténtalo de nuevo más tarde.');
@@ -78,9 +81,7 @@ const PaymentManagementPage = () => {
 
             if (storeId) {
                 const store = await getStoreById(storeId);
-              
                 setTokensAvailable(store.tokens_disponibles);
-                setDevicesUsed(plans.length);
             }
         } catch (err) {
             console.error('Error al cargar licencias:', err);
@@ -105,9 +106,17 @@ const PaymentManagementPage = () => {
 
         window.addEventListener('storage', handleStorageChange);
 
-        fetchPlans();
-        fetchCustomers();
-        fetchLicenses();
+        // Inicialización secuencial para asegurar validación antes de renderizar
+        (async () => {
+            setInitLoading(true);
+            try {
+                await fetchPlans();
+                await fetchCustomers();
+                await fetchLicenses();
+            } finally {
+                setInitLoading(false);
+            }
+        })();
 
         return () => {
             window.removeEventListener('storage', handleStorageChange);
@@ -149,9 +158,9 @@ const PaymentManagementPage = () => {
 
         try {
             const { customer, authenticatedUser, paymentPlan, initialPayment, signedContractFile } = finalData;
-
-            const deviceId = finalData.device.device_id;
-            console.log("DeviceId", paymentPlan);
+            
+            const deviceId = finalData?.device?.device_id;
+            const televisionId = finalData?.device?.television_id;
 
             const planPayload = {
                 initial_date: paymentPlan.initial_date,
@@ -160,6 +169,7 @@ const PaymentManagementPage = () => {
                 value: paymentPlan.value,
                 contract: "Contrato digital generado",
                 device_id: deviceId,
+                television_id: televisionId,
                 user_id: customer.user_id,
                 vendor_id: authenticatedUser.user_id
             };
@@ -190,6 +200,7 @@ const PaymentManagementPage = () => {
                     date: initialPayment.date,
                     reference: initialPayment.reference || `PI-${Date.now()}`,
                     device_id: deviceId,
+                    television_id: televisionId,
                     plan_id: planId
                 };
 
@@ -339,7 +350,33 @@ const PaymentManagementPage = () => {
 
     return (
         <div className="container bg-white rounded-xl mx-auto p-4 sm:p-6 lg:p-8">
-            {renderContent()}
+            {/* Loader de inicialización del módulo */}
+            {initLoading ? (
+                <div className="flex flex-col justify-center items-center h-64">
+                    <svg className="animate-spin -ml-1 mr-3 h-10 w-10 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p className="mt-3 text-lg text-gray-700">Se está cargando el módulo...</p>
+                </div>
+            ) : realTokensAvailable <= 0 ? (
+                // Pantalla de validación de licencias insuficientes
+                <div className="max-w-2xl mx-auto text-center p-8 bg-yellow-50 border border-yellow-200 rounded-xl">
+                    <h2 className="text-2xl font-bold text-yellow-800 mb-2">Necesitas obtener más licencias</h2>
+                    <p className="text-yellow-700 mb-6">No cuentas con licencias disponibles para registrar nuevas ventas. Por favor adquiere más licencias para continuar.</p>
+                    <div className="flex items-center justify-center space-x-3">
+                        <button
+                            onClick={handleContactSupport}
+                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400"
+                        >
+                            <LifebuoyIcon className="-ml-0.5 mr-2 h-5 w-5" />
+                            Contactar soporte para licencias
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                renderContent()
+            )}
         </div>
     );
 };

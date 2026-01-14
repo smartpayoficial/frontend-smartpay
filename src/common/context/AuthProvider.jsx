@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
+import { getUserMe } from '../../api/auth';
 
 const AuthContext = createContext(null);
 
@@ -36,50 +37,31 @@ export const AuthProvider = ({ children }) => {
         try {
             // Decodificar el token para obtener datos básicos como user_id, username y role.
             // Aunque /users/me debería devolverlos, tenerlos del token es un fallback o una forma rápida.
-            const decodedToken = jwtDecode(accessToken);
-            const userIdFromToken = decodedToken.sub; // 'sub' es el user_id en tu JWT
-            const usernameFromToken = decodedToken.username;
-            const roleNameFromToken = decodedToken.role; // El nombre del rol como string (e.g., "Superadmin")
+            // const decodedToken = jwtDecode(accessToken);
+            // const userIdFromToken = decodedToken.sub; // 'sub' es el user_id en tu JWT
+            // const usernameFromToken = decodedToken.username;
+            // const roleNameFromToken = decodedToken.role; // El nombre del rol como string (e.g., "Superadmin")
 
             // *** SEGUNDA LLAMADA A LA API ***
             // Hacemos una petición GET a /users/me usando el token recién obtenido.
             // Esta llamada es la que trae el resto de los detalles del usuario (first_name, last_name, email, dni, etc.).
-            const userResponse = await axios.get(`${API_BASE_URL}/users/me`, {
-                headers: {
-                    Authorization: `Bearer ${accessToken}` // ¡Muy importante! Enviar el token para autenticación
-                }
-            });
+            // const userResponse = await axios.get(`${API_BASE_URL}/users/me`, {
+            //     headers: {
+            //         Authorization: `Bearer ${accessToken}` // ¡Muy importante! Enviar el token para autenticación
+            //     }
+            // });
             
 
-            const fullUserData = userResponse.data; // Aquí recibimos los datos completos del usuario desde /users/me
+            // const fullUserData = userResponse.data; // Aquí recibimos los datos completos del usuario desde /users/me
 
             // Construimos el objeto 'user' final que usará el frontend.
             // Combinamos los datos del token con los datos de /users/me.
-            const userForFrontend = {
-                user_id: fullUserData.user_id || userIdFromToken, // Preferimos el user_id de /users/me, si no, del token
-                email: fullUserData.email,
-                username: fullUserData.username || usernameFromToken,
-                first_name: fullUserData.first_name,
-                last_name: fullUserData.last_name,
-                store: fullUserData.store,
-                phone: fullUserData.phone,
-                name: `${fullUserData.first_name || ''} ${fullUserData.last_name || ''}`.trim(), // Nombre completo para Navbar/Sidebar
-                // Asegúrate de que la propiedad 'role' del objeto `fullUserData` de /users/me
-                // tenga el nombre del rol. Puede ser `fullUserData.role.name` o `fullUserData.role` directamente.
-                role: (fullUserData.role && typeof fullUserData.role === 'object' && fullUserData.role.name)
-                    ? fullUserData.role.name
-                    : fullUserData.role || roleNameFromToken,
-                dni: fullUserData.dni || null,
-                state: fullUserData.state || null,
-                // Si /users/me devuelve más campos que necesites, agrégalos aquí:
-                // city_id: fullUserData.city_id,
-                // phone: fullUserData.phone,
-                // ...
-            };
+            localStorage.removeItem('paymentFlowState');
+            const userForFrontend = await getUserMe()
 
             // Actualizamos el estado 'user' en el contexto y persistimos en localStorage
             setUser(userForFrontend);
-            localStorage.setItem('user', JSON.stringify(userForFrontend));
+            // localStorage.setItem('user', JSON.stringify(userForFrontend));
 
         } catch (error) {
             console.error("Error fetching full user details or decoding token:", error.response?.data || error.message);
@@ -158,6 +140,9 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         delete axios.defaults.headers.common['Authorization']; // Limpia también el header de Axios
+        localStorage.removeItem('paymentFlowState'); //Limpiar la persistencia de venta en proceso
+        
+
         navigate('/login');
     };
 
